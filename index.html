@@ -3,33 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="TokenScore — ให้คะแนนเหรียญคริปโตด้วยอินดิเคเตอร์ทางเทคนิค (SMA, RSI, MACD, Bollinger) พร้อม AI วิเคราะห์แบบมุมมองนักลงทุนอาชีพ ฟรี ใช้ได้ทันที">
-<meta property="og:title" content="TokenScore ⚡ คะแนนเหรียญคริปโต + AI วิเคราะห์แบบมืออาชีพ">
-<meta property="og:description" content="คะแนน 0–100 จากอินดิเคเตอร์จริง + AI วิเคราะห์แบบนักลงทุนอาชีพ ฟรี ไม่ต้องสมัคร เปิดใช้ได้ทันที">
+<meta name="description" content="TokenScore — สแกนหาเหรียญต้นน้ำ (Early Buy Setup) ราคายังไม่พุ่ง พร้อมอินดิเคเตอร์บอกจังหวะซื้อ (RSI, MACD, Bollinger Squeeze) + AI วิเคราะห์แบบนักลงทุนมืออาชีพ ฟรี">
+<meta property="og:title" content="TokenScore ⚡ สแกนเหรียญต้นน้ำ + คะแนนคริปโต + AI วิเคราะห์มือโปร">
+<meta property="og:description" content="เรดาร์จับเหรียญราคายังไม่พุ่ง แต่อินดิเคเตอร์ส่งสัญญาณสะสมพลังเข้าซื้อ พร้อม AI วางแผน Stop Loss / Take Profit ฟรี">
 <meta property="og:type" content="website">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src https:; base-uri 'none'; form-action 'none'">
-<title>TokenScore ⚡ คะแนนเหรียญคริปโต + AI วิเคราะห์แบบมือโปร</title>
+<title>TokenScore ⚡ สแกนเหรียญต้นน้ำ & คะแนนคริปโต + AI วิเคราะห์มือโปร</title>
 <style>
 :root{
-  --bg:#070b14; --bg2:#0b1120; --card:#101a2e; --card2:#131f36; --line:#1d2b47;
-  --tx:#e8eefc; --tx2:#8ea3c7; --tx3:#5b6f96;
-  --acc:#4f7cff; --acc2:#22d3ee; --ok:#2dd4a7; --ok2:#16a34a; --warn:#f5b63f; --bad:#f4576e;
+  --bg:#060a14; --bg2:#0a1222; --card:#0f1a30; --card2:#14223f; --line:#1b2d52; --line-hi:#2c4780;
+  --tx:#f0f5ff; --tx2:#9bb0d6; --tx3:#6278a3;
+  --acc:#4f7cff; --acc2:#22d3ee; --ok:#2dd4a7; --ok2:#10b981; --warn:#f5b63f; --bad:#f4576e; --purple:#a855f7;
+  --glow-cyan:rgba(34,211,238,0.18); --glow-green:rgba(45,212,167,0.18);
   --radius:14px;
 }
 *{box-sizing:border-box; margin:0; padding:0}
 html,body{height:100%}
 body{
   font-family:'Prompt','Sarabun','Noto Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif;
-  background:radial-gradient(1200px 600px at 80% -10%, #14224a 0%, transparent 60%),
-             radial-gradient(900px 500px at -10% 110%, #0c2b33 0%, transparent 55%),
+  background:radial-gradient(1300px 650px at 80% -10%, #152759 0%, transparent 60%),
+             radial-gradient(1000px 550px at -10% 110%, #0a333d 0%, transparent 55%),
+             radial-gradient(700px 400px at 50% 50%, #0d1a38 0%, transparent 70%),
              var(--bg);
   color:var(--tx); min-height:100vh; font-size:15px; line-height:1.55;
 }
 .hidden{display:none!important}
 a{color:var(--acc2)}
-::-webkit-scrollbar{width:9px;height:9px}
-::-webkit-scrollbar-thumb{background:#23345c;border-radius:8px}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#223766;border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:#304d8f}
 ::-webkit-scrollbar-track{background:transparent}
 
 /* ---------- generic ---------- */
@@ -37,132 +40,241 @@ a{color:var(--acc2)}
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   border:1px solid var(--line);background:var(--card2);color:var(--tx);
   padding:9px 16px;border-radius:10px;cursor:pointer;font-size:14px;font-family:inherit;
-  transition:.15s; user-select:none;
+  transition:all .18s ease; user-select:none;
 }
-.btn:hover{border-color:#33497e;background:#182742}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.btn.primary{background:linear-gradient(135deg,#3b63e8,#5a3be8);border-color:#5a75d8;font-weight:600}
-.btn.primary:hover{filter:brightness(1.12)}
+.btn:hover{border-color:#3c5b9e;background:#1b2d52;transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.primary{background:linear-gradient(135deg,#3b63e8,#22d3ee);border-color:#5a84ea;font-weight:700;color:#fff;box-shadow:0 4px 16px rgba(59,99,232,.35)}
+.btn.primary:hover{filter:brightness(1.12);box-shadow:0 6px 20px rgba(34,211,238,.4)}
+.btn.early{background:linear-gradient(135deg,#10b981,#06b6d4);border-color:#34d399;font-weight:700;color:#fff;box-shadow:0 4px 16px rgba(16,185,129,.3)}
+.btn.early:hover{filter:brightness(1.15);box-shadow:0 6px 22px rgba(6,182,212,.45)}
 .btn.danger{background:linear-gradient(135deg,#b32b41,#7c1f30);border-color:#a03347}
-.btn.small{padding:5px 10px;font-size:12.5px;border-radius:8px}
+.btn.small{padding:5px 11px;font-size:12.5px;border-radius:8px}
 .btn.icon{padding:8px 10px}
 input,select,textarea{
-  width:100%;background:#0a1322;border:1px solid var(--line);color:var(--tx);
+  width:100%;background:#091224;border:1px solid var(--line);color:var(--tx);
   border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;
+  transition:border-color .15s, box-shadow .15s;
 }
-input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(79,124,255,.15)}
+input:focus,select:focus,textarea:focus{border-color:var(--acc2);box-shadow:0 0 0 3px rgba(34,211,238,.18)}
 label{display:block;font-size:12.5px;color:var(--tx2);margin:14px 0 6px;font-weight:600}
 .hint{font-size:12px;color:var(--tx3);margin-top:6px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
-.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;
-  padding:2px 8px;border-radius:999px;border:1px solid}
-.pill{padding:4px 10px;border-radius:8px;background:var(--card2);border:1px solid var(--line);font-size:12.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;backdrop-filter:blur(8px)}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;
+  padding:3px 9px;border-radius:999px;border:1px solid;line-height:1.2}
+.badge.early-tag{background:rgba(45,212,167,0.12);border-color:rgba(45,212,167,0.4);color:#2dd4a7}
+.badge.squeeze-tag{background:rgba(34,211,238,0.12);border-color:rgba(34,211,238,0.4);color:#22d3ee}
+.badge.cross-tag{background:rgba(245,182,63,0.12);border-color:rgba(245,182,63,0.4);color:#ffd98a}
+.badge.pumped-tag{background:rgba(244,87,110,0.12);border-color:rgba(244,87,110,0.4);color:#fca5a5}
+.pill{padding:4px 10px;border-radius:8px;background:var(--card2);border:1px solid var(--line);font-size:12.5px;display:inline-flex;align-items:center;gap:6px}
+.up{color:var(--ok)} .down{color:var(--bad)} .flat{color:var(--tx2)}
 
-/* ---------- screens (lock / setup) ---------- */
-.screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-.screen .panel{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);
-  border-radius:18px;padding:30px 28px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
-.logo{display:flex;align-items:center;gap:10px;margin-bottom:4px}
-.logo .mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#3b63e8,#22d3ee);
-  display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 6px 20px rgba(59,99,232,.4)}
-.logo h1{font-size:21px;letter-spacing:.2px}
-.logo h1 em{font-style:normal;background:linear-gradient(90deg,#7ea0ff,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
-.sub{color:var(--tx2);font-size:13.5px;margin:6px 0 18px}
-.pin-row{display:flex;gap:10px}
-.pin-row input{font-size:20px;text-align:center;letter-spacing:8px;font-weight:700}
-.msg-err{color:var(--bad);font-size:13px;margin-top:10px;min-height:18px}
-.msg-ok{color:var(--ok);font-size:13px;margin-top:10px;min-height:18px}
-.shake{animation:shake .4s}
-@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
-.linklike{background:none;border:none;color:var(--tx3);text-decoration:underline;cursor:pointer;font-size:12.5px;font-family:inherit}
-.linklike:hover{color:var(--bad)}
-.center{text-align:center}
-.mt{margin-top:16px}
-.flex{display:flex;gap:10px;align-items:center}
-.between{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
-
-/* ---------- app ---------- */
-#app{max-width:1280px;margin:0 auto;padding:18px 18px 60px}
+/* ---------- app layout ---------- */
+#app{max-width:1320px;margin:0 auto;padding:18px 18px 60px}
 header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 header .spacer{flex:1}
-#btn-lock{padding:8px 11px;font-size:13px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo .mark{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#3b63e8,#22d3ee);
+  display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 6px 20px rgba(59,99,232,.45)}
+.logo h1{font-size:22px;letter-spacing:.2px;font-weight:800}
+.logo h1 em{font-style:normal;background:linear-gradient(90deg,#7ea0ff,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+
 .banner{background:rgba(245,182,63,.1);border:1px solid rgba(245,182,63,.4);color:#ffd98a;
   border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px}
-.ov-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
-.ov-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px}
+.banner.welcome{background:linear-gradient(135deg,rgba(34,211,238,0.08),rgba(79,124,255,0.08));border-color:rgba(34,211,238,0.25);color:var(--tx)}
+.ov-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.ov-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:13px 16px;position:relative;overflow:hidden}
+.ov-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#3b63e8,transparent)}
 .ov-card .t{font-size:12px;color:var(--tx3);font-weight:600}
-.ov-card .v{font-size:17.5px;font-weight:700;margin-top:3px;letter-spacing:.2px}
+.ov-card .v{font-size:18px;font-weight:800;margin-top:3px;letter-spacing:.2px}
 .ov-card .d{font-size:12.5px;margin-top:2px;font-weight:600}
-.up{color:var(--ok)} .down{color:var(--bad)} .flat{color:var(--tx2)}
-.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-#search{max-width:280px}
-#tbl-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:auto}
-table{width:100%;border-collapse:collapse;min-width:900px}
+
+/* ---------- Early Buy Radar Hero Spotlight ---------- */
+.radar-hero{
+  background:linear-gradient(135deg,#0c1933 0%, #0d223c 50%, #0a1b2a 100%);
+  border:1px solid rgba(34,211,238,0.3);border-radius:18px;padding:20px 22px;margin-bottom:20px;
+  box-shadow:0 12px 36px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+  position:relative;overflow:hidden;
+}
+.radar-hero::after{
+  content:'';position:absolute;top:-80px;right:-80px;width:240px;height:240px;
+  background:radial-gradient(circle, rgba(34,211,238,0.15) 0%, transparent 70%);
+  pointer-events:none;
+}
+.radar-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.radar-title-group{display:flex;align-items:center;gap:10px}
+.radar-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#10b981,#06b6d4);
+  display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 14px rgba(16,185,129,.4)}
+.radar-head h2{font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px}
+.radar-head p{font-size:13px;color:var(--tx2);margin-top:2px}
+
+.spotlight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px}
+.spot-card{
+  background:rgba(10,20,38,0.85);border:1px solid rgba(45,212,167,0.25);border-radius:14px;
+  padding:16px;cursor:pointer;transition:all .2s ease;display:flex;flex-direction:column;gap:10px;
+  position:relative;backdrop-filter:blur(10px);
+}
+.spot-card:hover{
+  border-color:var(--ok);transform:translateY(-3px);box-shadow:0 10px 28px rgba(45,212,167,0.2);
+  background:rgba(14,27,51,0.95);
+}
+.spot-card.top1{border-color:rgba(34,211,238,0.4);box-shadow:0 6px 20px rgba(34,211,238,0.12)}
+.spot-top{display:flex;align-items:center;gap:10px}
+.spot-img{width:36px;height:36px;border-radius:50%;background:#091224;border:1px solid var(--line)}
+.spot-info{flex:1;min-width:0}
+.spot-nm{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spot-sy{font-size:12px;color:var(--tx3);font-weight:600}
+.spot-score-box{text-align:right}
+.spot-score-val{font-size:22px;font-weight:800;line-height:1;color:var(--ok)}
+.spot-score-lbl{font-size:10px;color:var(--tx3);font-weight:700;text-transform:uppercase}
+.spot-price-row{display:flex;justify-content:space-between;align-items:center;background:#08101e;padding:8px 10px;border-radius:8px;font-size:13px}
+.spot-tags{display:flex;flex-wrap:wrap;gap:6px}
+.spot-desc{font-size:12px;color:var(--tx2);line-height:1.45;background:rgba(18,34,64,0.4);padding:8px 10px;border-radius:8px;border-left:3px solid var(--ok)}
+.spot-btn{margin-top:auto;width:100%;font-size:12.5px;padding:7px 12px}
+
+/* ---------- Mode Switcher Tabs ---------- */
+.modes-bar{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px}
+.mode-btn{
+  padding:9px 16px;border-radius:12px;border:1px solid var(--line);background:var(--card);
+  color:var(--tx2);font-weight:700;font-size:13.5px;cursor:pointer;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:7px;transition:all .18s ease;
+}
+.mode-btn:hover{border-color:var(--acc2);color:var(--tx);background:var(--card2)}
+.mode-btn.active{
+  background:linear-gradient(135deg,rgba(59,99,232,.35),rgba(34,211,238,.25));
+  border-color:var(--acc2);color:#fff;box-shadow:0 4px 14px rgba(34,211,238,.2);
+}
+.mode-btn .tag-num{font-size:11px;padding:1px 6px;border-radius:99px;background:rgba(255,255,255,0.12);color:#fff}
+
+/* ---------- toolbar & filters ---------- */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px}
+#search{max-width:260px}
+.filter-toggles{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toggle-chip{
+  font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--tx2);cursor:pointer;user-select:none;transition:all .15s ease;
+  display:inline-flex;align-items:center;gap:5px;
+}
+.toggle-chip:hover{border-color:#3c5b9e;color:var(--tx)}
+.toggle-chip.active{background:rgba(34,211,238,0.15);border-color:var(--acc2);color:var(--acc2)}
+
+/* ---------- table ---------- */
+#tbl-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+table{width:100%;border-collapse:collapse;min-width:980px}
 th{font-size:11.5px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;
-  text-align:right;padding:12px 12px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--card);cursor:pointer;user-select:none}
+  text-align:right;padding:13px 12px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:#0d182e;cursor:pointer;user-select:none;z-index:2}
 th:first-child,td:first-child{text-align:left}
 th:hover{color:var(--tx)}
 th .arr{font-size:9px;margin-left:3px;color:var(--acc2)}
-td{padding:11px 12px;border-bottom:1px solid #16233d;text-align:right;white-space:nowrap;font-size:13.5px}
+th.th-early{background:linear-gradient(180deg,#122544 0%,#0d182e 100%);color:var(--ok)}
+td{padding:12px 12px;border-bottom:1px solid #14223d;text-align:right;white-space:nowrap;font-size:13.5px}
 td:first-child{text-align:left}
-tbody tr{cursor:pointer;transition:background .12s}
-tbody tr:hover{background:#15213b}
+tbody tr{cursor:pointer;transition:background .12s, transform .12s}
+tbody tr:hover{background:#13203c}
+tbody tr.highlight-early{background:rgba(45,212,167,0.04)}
+tbody tr.highlight-early:hover{background:rgba(45,212,167,0.1)}
+
 .coin-cell{display:flex;align-items:center;gap:10px}
-.coin-cell img{width:26px;height:26px;border-radius:50%;background:#0a1322}
-.coin-cell .nm{font-weight:600;font-size:14px}
-.coin-cell .sy{color:var(--tx3);font-size:12px}
+.coin-cell img{width:28px;height:28px;border-radius:50%;background:#091224;border:1px solid rgba(255,255,255,0.06)}
+.coin-cell .nm{font-weight:700;font-size:14px;color:var(--tx)}
+.coin-cell .sy{color:var(--tx3);font-size:12px;font-weight:600}
+.coin-cell .rank-badge{font-size:10.5px;color:var(--tx3);margin-left:4px}
+
 .score-chip{display:inline-flex;flex-direction:column;align-items:flex-end;gap:1px}
 .score-chip .sc{font-weight:800;font-size:14.5px}
 .score-chip .gr{font-size:10.5px;color:var(--tx3);font-weight:700}
-.mini-spark{width:70px;height:26px;opacity:.9}
+
+.early-chip{display:inline-flex;flex-direction:column;align-items:flex-end;gap:2px}
+.early-chip .bar-box{width:64px;height:5px;background:#0d1930;border-radius:99px;overflow:hidden;margin-top:2px}
+.early-chip .bar-box i{display:block;height:100%;border-radius:99px}
+.early-chip .sc{font-weight:800;font-size:14px}
+
+.rsi-pill{font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:6px;display:inline-block}
+.rsi-sweet{background:rgba(45,212,167,0.15);color:#2dd4a7;border:1px solid rgba(45,212,167,0.4)}
+.rsi-oversold{background:rgba(34,211,238,0.15);color:#22d3ee;border:1px solid rgba(34,211,238,0.4)}
+.rsi-neutral{background:#111e38;color:var(--tx2);border:1px solid var(--line)}
+.rsi-overbought{background:rgba(244,87,110,0.15);color:#f4576e;border:1px solid rgba(244,87,110,0.4)}
+
+.sig-cell{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;max-width:240px}
+
+.mini-spark{width:70px;height:26px;opacity:.95}
 .rank-no{color:var(--tx3);font-weight:700;font-size:12.5px}
-.loading-row td{text-align:center;color:var(--tx3);padding:30px}
-footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
+.loading-row td{text-align:center;color:var(--tx3);padding:40px}
+footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
 
 /* ---------- drawer ---------- */
-#overlay{position:fixed;inset:0;background:rgba(3,6,13,.66);backdrop-filter:blur(3px);z-index:40}
-#drawer{position:fixed;top:0;right:0;bottom:0;width:min(720px,100vw);background:var(--bg2);
-  border-left:1px solid var(--line);z-index:50;display:flex;flex-direction:column;box-shadow:-20px 0 60px rgba(0,0,0,.55);
+#overlay{position:fixed;inset:0;background:rgba(3,6,13,.7);backdrop-filter:blur(4px);z-index:40}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(760px,100vw);background:var(--bg2);
+  border-left:1px solid var(--line);z-index:50;display:flex;flex-direction:column;box-shadow:-20px 0 60px rgba(0,0,0,.65);
   animation:slidein .22s ease}
 @keyframes slidein{from{transform:translateX(40px);opacity:.4}to{transform:none;opacity:1}}
-.dr-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center}
-.dr-head img{width:38px;height:38px;border-radius:50%}
-.dr-head .nm{font-size:16.5px;font-weight:700}
-.dr-head .sy{color:var(--tx3);font-size:12.5px}
+.dr-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;background:#0d182e}
+.dr-head img{width:40px;height:40px;border-radius:50%;border:1px solid var(--line)}
+.dr-head .nm{font-size:17px;font-weight:800}
+.dr-head .sy{color:var(--tx3);font-size:12.5px;font-weight:600}
 .dr-body{flex:1;overflow-y:auto;padding:18px 20px 30px}
 .dr-tabs{display:flex;gap:8px;margin-bottom:16px}
-.dr-tab{flex:1;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card);
-  cursor:pointer;text-align:center;font-weight:600;font-size:13.5px;color:var(--tx2)}
-.dr-tab.active{background:linear-gradient(135deg,rgba(59,99,232,.25),rgba(34,211,238,.15));
-  border-color:#3b63e8;color:var(--tx)}
-.ring-wrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
-.ring{width:150px;height:150px;border-radius:50%;position:relative;flex-shrink:0;
+.dr-tab{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);
+  cursor:pointer;text-align:center;font-weight:700;font-size:13.5px;color:var(--tx2);transition:all .15s ease}
+.dr-tab.active{background:linear-gradient(135deg,rgba(59,99,232,.3),rgba(34,211,238,.2));
+  border-color:var(--acc2);color:#fff}
+
+/* Early Buy Detail Section inside Drawer */
+.dr-early-box{
+  background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(6,182,212,0.08));
+  border:1px solid rgba(45,212,167,0.35);border-radius:var(--radius);padding:16px 18px;margin-bottom:16px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.25);
+}
+.dr-early-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.dr-early-head h3{font-size:15px;color:var(--ok);font-weight:800;display:flex;align-items:center;gap:7px}
+.dr-early-score{font-size:18px;font-weight:800;color:var(--ok)}
+
+.dr-checklist{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px}
+.dr-check-item{display:flex;align-items:flex-start;gap:10px;background:rgba(8,16,30,0.6);padding:8px 12px;border-radius:8px;font-size:12.5px}
+.dr-check-item .ci-icon{font-size:15px;line-height:1}
+.dr-check-item .ci-text{flex:1;color:var(--tx2)}
+.dr-check-item .ci-text strong{color:var(--tx)}
+.dr-check-item.pass{border-left:3px solid var(--ok)}
+.dr-check-item.warn{border-left:3px solid var(--warn)}
+.dr-check-item.fail{border-left:3px solid var(--bad)}
+
+.dr-levels-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;background:rgba(8,16,30,0.8);padding:10px;border-radius:10px;border:1px solid var(--line)}
+.level-card{text-align:center;padding:6px}
+.level-card .lt{font-size:11px;color:var(--tx3);font-weight:700}
+.level-card .lv{font-size:14px;font-weight:800;margin-top:2px}
+
+.ring-wrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-bottom:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.ring{width:130px;height:130px;border-radius:50%;position:relative;flex-shrink:0;
   display:flex;align-items:center;justify-content:center}
-.ring .in{width:118px;height:118px;border-radius:50%;background:var(--bg2);
+.ring .in{width:102px;height:102px;border-radius:50%;background:var(--bg2);
   display:flex;flex-direction:column;align-items:center;justify-content:center}
-.ring .num{font-size:34px;font-weight:800;line-height:1}
-.ring .lbl{font-size:11px;color:var(--tx3);font-weight:600;letter-spacing:1px}
-.ring-head .grd{font-size:19px;font-weight:800}
+.ring .num{font-size:32px;font-weight:800;line-height:1}
+.ring .lbl{font-size:10.5px;color:var(--tx3);font-weight:600;letter-spacing:1px}
+.ring-head .grd{font-size:18px;font-weight:800}
 .ring-head .sig{font-size:13.5px;margin-top:2px}
-.ring-head .meta{color:var(--tx3);font-size:12px;margin-top:8px}
-.subscore{display:flex;flex-direction:column;gap:9px;margin:16px 0}
-.subscore .row{display:grid;grid-template-columns:92px 1fr 44px;gap:10px;align-items:center;font-size:12.5px}
+.ring-head .meta{color:var(--tx3);font-size:12px;margin-top:6px}
+
+.subscore{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+.subscore .row{display:grid;grid-template-columns:120px 1fr 44px;gap:10px;align-items:center;font-size:12.5px}
 .subscore .nm{color:var(--tx2);font-weight:600}
-.subscore .bar{height:8px;background:#0d1930;border-radius:99px;overflow:hidden}
+.subscore .bar{height:7px;background:#0d1930;border-radius:99px;overflow:hidden}
 .subscore .bar i{display:block;height:100%;border-radius:99px;transition:width .6s}
 .subscore .val{font-weight:700;text-align:right}
+
 .grid-ind{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:6px 0 14px}
 .ind-chip{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
 .ind-chip .t{font-size:10.5px;color:var(--tx3);font-weight:700;letter-spacing:.4px}
-.ind-chip .v{font-size:14.5px;font-weight:700;margin-top:2px}
+.ind-chip .v{font-size:14px;font-weight:700;margin-top:2px}
 .ind-chip .s{font-size:11px;font-weight:700}
+
 .chart-box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:12px}
 .chart-title{font-size:12px;color:var(--tx3);font-weight:700;letter-spacing:.5px;margin-bottom:8px}
 .chart-box canvas{width:100%;height:220px;display:block}
 .chart-box canvas.osc{height:120px}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--tx3);margin-top:6px}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+
 .analysis-box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
 .analysis-box h3{font-size:14.5px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .ai-output{font-size:13.8px;line-height:1.75;color:#dbe6fb;white-space:normal}
@@ -178,7 +290,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
 .disc{font-size:11.5px;color:var(--tx3);margin-top:12px;line-height:1.6}
 
 /* ---------- modal ---------- */
-#modal-settings,#modal-pin{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px}
+#modal-settings,#modal-pin{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;background:rgba(3,6,13,.75);backdrop-filter:blur(4px)}
 .modal-card{width:100%;max-width:560px;background:var(--bg2);border:1px solid var(--line);
   border-radius:16px;padding:22px 24px;box-shadow:0 30px 90px rgba(0,0,0,.6);margin:auto 0}
 .modal-card h2{font-size:17px;margin-bottom:4px}
@@ -191,9 +303,16 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
   background:#16233f;border:1px solid var(--line);color:var(--tx);padding:11px 18px;border-radius:10px;
   font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.5);display:flex;gap:8px;align-items:center;max-width:90vw}
 .toast.ok{border-color:#1f5d4a}.toast.err{border-color:#7c2c3c}
-.skeleton{background:linear-gradient(90deg,#0d1930 25%,#16233f 50%,#0d1930 75%);background-size:200% 100%;
-  animation:sk 1.2s infinite;border-radius:6px;color:transparent!important}
-@keyframes sk{to{background-position:-200% 0}}
+.between{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.mt{margin-top:16px}
+.center{text-align:center}
+
+@media (max-width:768px){
+  .spotlight-grid{grid-template-columns:1fr}
+  .modes-bar{padding-bottom:8px}
+  .radar-hero{padding:16px}
+}
 @media (max-width:640px){
   .grid2{grid-template-columns:1fr}
   .ring-wrap{justify-content:center;text-align:center}
@@ -207,11 +326,11 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
 <div id="app" class="hidden">
   <header>
     <div class="logo"><span class="mark">⚡</span><h1>Token<em>Score</em></h1></div>
-    <span class="pill" id="tagline">คะแนนคริปโต + AI วิเคราะห์แบบมืออาชีพ — ฟรี ใช้ได้ทันที</span>
+    <span class="pill" id="tagline">🎯 เรดาร์เหรียญต้นน้ำ + AI วางแผนเทรด — ฟรี</span>
     <span class="pill" id="status-ai">AI: —</span>
     <div class="spacer"></div>
-    <button class="btn icon" id="btn-refresh" title="รีเฟรชข้อมูล">🔄</button>
-    <button class="btn icon" id="btn-settings" title="ตั้งค่า">⚙️</button>
+    <button class="btn icon" id="btn-refresh" title="รีเฟรชข้อมูลตลาด">🔄</button>
+    <button class="btn icon" id="btn-settings" title="ตั้งค่าระบบ / คีย์ AI">⚙️</button>
     <button class="btn icon hidden" id="btn-lock" title="ล็อกหน้าจอ">🔒</button>
   </header>
 
@@ -219,22 +338,62 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
     ⚠️ หน้านี้เปิดผ่าน HTTP (ไม่ปลอดภัย) — ระบบจะ<b>ปิดการเรียก AI</b> เพื่อความปลอดภัยของคีย์
     กรุณาใช้งานผ่าน HTTPS (เช่น GitHub Pages) หรือ localhost เท่านั้น
   </div>
-  <div class="banner" id="banner-welcome">
-    👋 ยินดีต้อนรับสู่ <b>TokenScore</b> — คะแนนคริปโตจากอินดิเคเตอร์จริง + AI วิเคราะห์แบบนักลงทุนอาชีพ
-    ใช้ฟรีได้ทันที (AI เริ่มต้นเป็นบริการฟรี ไม่ต้องมีคีย์)
-    <button class="btn small" id="btn-close-welcome" style="margin-left:10px">รับทราบ ✕</button>
+  <div class="banner welcome" id="banner-welcome">
+    <div class="between">
+      <div>
+        👋 ยินดีต้อนรับสู่ <b>TokenScore</b> — ระบบสแกนหา <b>เหรียญต้นน้ำ (Early Buy Setup)</b> ที่ราคายังไม่พุ่ง
+        และอินดิเคเตอร์ (RSI, MACD, Bollinger Squeeze) กำลังส่งสัญญาณสะสมพลัง พร้อม AI วิเคราะห์กลยุทธ์ฟรี
+      </div>
+      <button class="btn small" id="btn-close-welcome">รับทราบ ✕</button>
+    </div>
   </div>
   <div class="banner hidden" id="banner-err"></div>
 
+  <!-- ภาพรวมตลาด -->
   <div class="ov-row" id="ov-row"></div>
 
-  <div class="toolbar">
-    <input type="search" id="search" placeholder="🔍 ค้นหาเหรียญ (ชื่อ / สัญลักษณ์)...">
-    <span class="hint" id="last-update" style="margin:0"></span>
-    <div class="spacer" style="flex:1"></div>
-    <span class="pill">คลิกแถวเพื่อดูคะแนนเต็ม + AI ⚡</span>
+  <!-- Hero Spotlight: Top 3 Early Buy Gems -->
+  <section class="radar-hero" id="radar-hero">
+    <div class="radar-head">
+      <div class="radar-title-group">
+        <div class="radar-icon">🎯</div>
+        <div>
+          <h2>เรดาร์เหรียญต้นน้ำแนะนำ (Early Buy Radar)</h2>
+          <p>คัดกรองเหรียญที่ราคายังไม่พุ่ง + อินดี้หลายตัว (RSI, MACD, Bollinger Squeeze) ส่งสัญญาณสะสมพลัง</p>
+        </div>
+      </div>
+      <span class="pill" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.4);color:#34d399">
+        ✨ สแกนสดแบบ Real-Time
+      </span>
+    </div>
+    <div class="spotlight-grid" id="spotlight-grid">
+      <div class="spot-card"><span class="hint">กำลังคำนวณสัญญาณเรดาร์...</span></div>
+    </div>
+  </section>
+
+  <!-- Mode Switcher Tabs -->
+  <div class="modes-bar" id="mode-bar">
+    <button class="mode-btn active" data-mode="early">🎯 เหรียญต้นน้ำ (Early Buy) <span class="tag-num" id="cnt-early">0</span></button>
+    <button class="mode-btn" data-mode="all">📊 ตลาดรวม Top 50 <span class="tag-num" id="cnt-all">50</span></button>
+    <button class="mode-btn" data-mode="squeeze">🗜️ BB Squeeze จ่อระเบิด <span class="tag-num" id="cnt-squeeze">0</span></button>
+    <button class="mode-btn" data-mode="reversal">🔄 MACD กำลังกลับตัวขึ้น <span class="tag-num" id="cnt-reversal">0</span></button>
+    <button class="mode-btn" data-mode="oversold">📉 RSI โซนรับของถูก <span class="tag-num" id="cnt-oversold">0</span></button>
+    <button class="mode-btn" data-mode="momentum">🔥 โมเมนตัมนำตลาด <span class="tag-num" id="cnt-momentum">0</span></button>
   </div>
 
+  <!-- Filter & Search Toolbar -->
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="🔍 ค้นหาเหรียญ (ชื่อ / สัญลักษณ์)...">
+    <div class="filter-toggles">
+      <span class="toggle-chip active" id="tog-hide-pumped" title="ซ่อนเหรียญที่ราคาพุ่งแรงไปแล้ว (>10% ใน 24ชม./7วัน)">🛡️ ซ่อนเหรียญที่พุ่งแล้ว</span>
+      <span class="toggle-chip active" id="tog-hide-stable" title="ซ่อนเหรียญ Stablecoin & สินทรัพย์ Pegged">🪙 ซ่อน Stablecoin</span>
+      <span class="toggle-chip" id="tog-only-high-score" title="แสดงเฉพาะเหรียญเกรดดี คะแนนต้นน้ำ ≥ 70">⭐ คะแนนต้นน้ำ ≥ 70</span>
+    </div>
+    <div class="spacer" style="flex:1"></div>
+    <span class="hint" id="last-update" style="margin:0"></span>
+  </div>
+
+  <!-- ตารางแสดงเหรียญ -->
   <div id="tbl-wrap">
     <table>
       <thead>
@@ -245,9 +404,11 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
           <th data-k="c24">24ชม.</th>
           <th data-k="c7">7วัน</th>
           <th data-k="c30">30วัน</th>
-          <th data-k="vol">วอลุ่ม/มาร์เก็ตแคป</th>
+          <th data-k="rsi">RSI (14)</th>
+          <th>สัญญาณอินดิเคเตอร์</th>
           <th data-k="trend7">เทรนด์ 7 วัน</th>
-          <th data-k="score">คะแนนเร็ว<span class="arr"></span></th>
+          <th data-k="earlyScore" class="th-early">คะแนนต้นน้ำ 🎯<span class="arr"></span></th>
+          <th data-k="score">คะแนนรวม ⚡</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -255,13 +416,13 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
   </div>
 
   <footer>
-    <b>⚠️ คำเตือนความเสี่ยง:</b> คะแนนและบทวิเคราะห์ทั้งหมดคำนวณจากข้อมูลราคาย้อนหลังและโมเดล AI — ไม่ใช่คำแนะนำการลงทุน
-    คริปโตมีความเสี่ยงสูง คุณอาจสูญเสียเงินทั้งหมด โปรดตัดสินใจด้วยตัวเอง และลงทุนเท่าที่รับความเสี่ยงได้<br>
-    ข้อมูลตลาด: CoinGecko (สาธารณะ, อาจล่าช้า) • AI เริ่มต้น: Pollinations (บริการฟรีสาธารณะ — ความเร็ว/ความพร้อมขึ้นอยู่กับผู้ให้บริการ; ผู้ใช้ที่มีคีย์ของตัวเองเลือกใช้ OpenAI / OpenRouter / Groq ได้ในตั้งค่า และคีย์จะถูกเก็บเข้ารหัสในเครื่องของผู้นั้นเท่านั้น) • อัปเดตอัตโนมัติทุก 90 วินาที
+    <b>⚠️ คำเตือนความเสี่ยง:</b> คะแนนและบทวิเคราะห์ทั้งหมดคำนวณจากข้อมูลราคาย้อนหลังและโมเดล AI — <b>ไม่ใช่คำแนะนำการลงทุน</b>
+    คริปโตเคอร์เรนซีมีความเสี่ยงสูง คุณอาจสูญเสียเงินทั้งหมด โปรดศึกษาด้วยตัวเองและลงทุนเท่าที่รับความเสี่ยงได้<br>
+    ข้อมูลตลาด: CoinGecko (สาธารณะ, อาจล่าช้า) • AI เริ่มต้น: Pollinations (บริการฟรี ไม่ต้องมีคีย์; ผู้ใช้ที่มีคีย์ส่วนตัวสามารถใส่คีย์ OpenAI / OpenRouter / Groq ในตั้งค่า โดยคีย์จะถูกเข้ารหัส AES-256 ในเครื่องของคุณเท่านั้น) • อัปเดตอัตโนมัติทุก 90 วินาที
   </footer>
 </div>
 
-<!-- ==================== drawer รายละเอียด ==================== -->
+<!-- ==================== Drawer รายละเอียด ==================== -->
 <div id="overlay" class="hidden"></div>
 <aside id="drawer" class="hidden">
   <div class="dr-head">
@@ -277,13 +438,24 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
     <button class="btn icon" id="dr-close" title="ปิด">✕</button>
   </div>
   <div class="dr-tabs" style="padding:14px 20px 0">
-    <div class="dr-tab active" data-tab="score">📊 คะแนน &amp; อินดิเคเตอร์</div>
+    <div class="dr-tab active" data-tab="score">📊 คะแนน &amp; จังหวะเข้าซื้อ</div>
     <div class="dr-tab" data-tab="ai">🧠 บทวิเคราะห์ (AI)</div>
   </div>
   <div class="dr-body">
 
     <div id="tab-score">
-      <div class="ring-wrap" id="ring-area"><span class="hint">กำลังโหลดข้อมูลกราฟ...</span></div>
+      <!-- Early Buy Assessment Section -->
+      <div class="dr-early-box" id="dr-early-box">
+        <div class="dr-early-head">
+          <h3>🎯 การประเมินจังหวะเข้าซื้อต้นน้ำ (Early Entry Setup)</h3>
+          <span class="dr-early-score" id="dr-early-score-text">—</span>
+        </div>
+        <div class="dr-checklist" id="dr-checklist"></div>
+        <div class="dr-levels-grid" id="dr-levels-grid"></div>
+      </div>
+
+      <!-- Ring Score & Breakdown -->
+      <div class="ring-wrap" id="ring-area"><span class="hint">กำลังโหลดข้อมูลกราฟ 30 วัน...</span></div>
       <div class="subscore" id="subscore"></div>
       <div class="grid-ind" id="grid-ind"></div>
       <div class="chart-box">
@@ -291,15 +463,15 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
         <canvas id="cv-price"></canvas>
         <div class="legend" id="lg-price"></div>
       </div>
-      <div class="chart-box"><div class="chart-title">RSI (14)</div><canvas id="cv-rsi" class="osc"></canvas></div>
-      <div class="chart-box"><div class="chart-title">MACD (12, 26, 9)</div><canvas id="cv-macd" class="osc"></canvas></div>
-      <p class="disc">น้ำหนักคะแนน: เทรนด์ 25% • โมเมนตัม 25% • ความเสี่ยง 20% • วอลุ่ม 15% • สภาพสุดโต่ง 15%
+      <div class="chart-box"><div class="chart-title">RSI (14) — โซนสะสม (30–50) vs Overbought (>70)</div><canvas id="cv-rsi" class="osc"></canvas></div>
+      <div class="chart-box"><div class="chart-title">MACD (12, 26, 9) — สัญญาณตัดขึ้น & โมเมนตัม</div><canvas id="cv-macd" class="osc"></canvas></div>
+      <p class="disc">น้ำหนักคะแนนเต็ม: เทรนด์ 25% • โมเมนตัม 25% • ความเสี่ยง 20% • วอลุ่ม 15% • สภาพสุดโต่ง 15%
       คำนวณจากแท่ง 4 ชม. ย้อนหลัง 30 วัน (ข้อมูล CoinGecko)</p>
     </div>
 
     <div id="tab-ai" class="hidden">
       <div class="analysis-box">
-        <h3>🤖 บทวิเคราะห์อัตโนมัติ (Rule-based)</h3>
+        <h3>🤖 บทวิเคราะห์อัตโนมัติ (Rule-based &amp; Trade Setup)</h3>
         <div class="ai-output" id="rule-out"></div>
       </div>
       <div class="analysis-box">
@@ -312,76 +484,69 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
   </div>
 </aside>
 
-<!-- ==================== modal ตั้งค่า ==================== -->
+<!-- ==================== Modal ตั้งค่า ==================== -->
 <div id="modal-settings" class="hidden">
   <div class="modal-card">
     <div class="between">
-      <h2>⚙️ ตั้งค่า</h2>
+      <h2>⚙️ ตั้งค่าระบบ</h2>
       <button class="btn icon" id="set-close">✕</button>
     </div>
 
-    <div class="sec-title">การแสดงผล</div>
-    <label>สกุลเงินที่แสดง</label>
+    <div class="sec-title">สกุลเงินแสดงผล</div>
     <select id="set-currency">
       <option value="USD">USD ($)</option>
       <option value="THB">THB (฿)</option>
     </select>
 
-    <div class="sec-title">AI (OpenAI-compatible)</div>
-    <p class="hint" style="margin:0">ค่าเริ่มต้นเป็น <b>Pollinations (ฟรี ไม่ต้องใช้คีย์)</b> — ใช้ได้เลยทันที
-      หรือใช้คีย์ของคุณเอง (OpenAI / OpenRouter / Groq) เพื่อความเร็วและความเสถียรที่มากกว่า
-      คีย์ของคุณจะถูกเข้ารหัสและเก็บในเครื่องของคุณเท่านั้น ไม่ถูกส่งไปให้เจ้าของเว็บนี้</p>
-    <label>ผู้ให้บริการ</label>
+    <div class="sec-title">ปัญญาประดิษฐ์ (AI)</div>
+    <label>ผู้ให้บริการ AI</label>
     <select id="set-provider">
-      <option value="openrouter">OpenRouter</option>
-      <option value="openai">OpenAI</option>
-      <option value="groq">Groq</option>
-      <option value="pollinations">Pollinations (ฟรี)</option>
-      <option value="custom">กำหนดเอง</option>
+      <option value="pollinations">Pollinations (ฟรี — พร้อมใช้ทันที ไม่ต้องมีคีย์)</option>
+      <option value="openrouter">OpenRouter (แนะนำ: DeepSeek / Claude / GPT)</option>
+      <option value="openai">OpenAI (GPT-4o mini / GPT-4o)</option>
+      <option value="groq">Groq (Llama 3.3 — เร็วพิเศษ)</option>
+      <option value="custom">กำหนดเอง (OpenAI-compatible endpoint)</option>
     </select>
+
     <label>Base URL</label>
-    <input type="url" id="set-base" placeholder="https://api.openai.com/v1" autocomplete="off" spellcheck="false">
-    <label>โมเดล</label>
-    <input type="text" id="set-model" placeholder="gpt-4o-mini" autocomplete="off" spellcheck="false">
-    <label>API Key</label>
+    <input type="text" id="set-base" placeholder="https://api.openai.com/v1">
+    <label>โมเดล (Model Name)</label>
+    <input type="text" id="set-model" placeholder="gpt-4o-mini">
+    <label>API Key (สำหรับผู้ให้บริการที่ต้องใช้คีย์)</label>
     <div class="pwd-wrap">
-      <input type="password" id="set-key" placeholder="sk-..." autocomplete="off" spellcheck="false">
-      <button class="eye" id="set-eye" title="แสดง/ซ่อน">👁</button>
+      <input type="password" id="set-key" placeholder="sk-...">
+      <button class="eye" id="set-eye" type="button">👁️</button>
     </div>
-    <div class="flex mt">
-      <button class="btn primary" id="set-ai-save" style="flex:1">💾 บันทึกการตั้งค่า AI</button>
-      <button class="btn" id="set-ai-test">🧪 ทดสอบ</button>
-      <button class="btn" id="set-ai-default">↩️ คืนค่า AI ฟรี</button>
-    </div>
-    <p class="hint" id="set-ai-msg"></p>
+    <div class="hint">🔒 คีย์ของคุณจะถูกเข้ารหัส AES-256 ด้วย PIN ในเครื่องนี้เท่านั้น เจ้าของเว็บแตะคีย์ไม่ได้ และไม่รั่วไหลไป GitHub</div>
 
-    <div class="sec-title">ข้อมูลในเครื่องของคุณ</div>
-    <p class="hint" style="margin:8px 0 0">คีย์ AI ของคุณจะถูกเข้ารหัส AES-256 ด้วย PIN ส่วนตัวและเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น —
-      ไม่ถูกส่งไปให้เจ้าของเว็บนี้</p>
-    <div class="flex mt">
-      <button class="btn" id="set-chpin">🔑 เปลี่ยน PIN (ถ้าใช้คีย์ส่วนตัว)</button>
-      <button class="btn danger" id="set-wipe">🗑️ ล้างข้อมูลทั้งหมด</button>
+    <div class="flex mt" style="flex-wrap:wrap">
+      <button class="btn primary" id="set-ai-save">💾 บันทึกการตั้งค่า AI</button>
+      <button class="btn" id="set-ai-test">🧪 ทดสอบเชื่อมต่อ</button>
+      <button class="btn" id="set-ai-default">↩️ คืนค่า AI ฟรีเริ่มต้น</button>
     </div>
-    <p class="hint">ล้างข้อมูล = ลบคีย์ AI/การตั้งค่าที่เก็บในเครื่องนี้ (คีย์ AI ที่เว็บผู้ให้บริการยังอยู่ครบ)</p>
+    <div id="set-ai-msg" class="mt"></div>
+    <div class="hint" id="set-usage" style="margin-top:10px"></div>
 
-    <div class="sec-title">การใช้งาน AI วันนี้</div>
-    <p class="hint" id="set-usage" style="margin-top:6px">—</p>
-    <p class="hint">เพื่อกันการใช้คีย์เกินงบ ระบบจำกัดการเรียก AI ไม่เกิน 12 ครั้ง/ชั่วโมง</p>
+    <div class="sec-title">จัดการข้อมูล</div>
+    <div class="flex" style="flex-wrap:wrap;gap:8px">
+      <button class="btn small" id="set-chpin">🔐 เปลี่ยน PIN เข้ารหัสคีย์</button>
+      <button class="btn small danger" id="set-wipe">🗑️ ล้างข้อมูลทั้งหมดในเครื่องนี้</button>
+    </div>
   </div>
 </div>
 
-<!-- ==================== modal เปลี่ยน PIN ==================== -->
+<!-- Modal เปลี่ยน PIN -->
 <div id="modal-pin" class="hidden">
-  <div class="modal-card" style="max-width:440px">
-    <h2>🔑 เปลี่ยน PIN</h2>
-    <p class="hint" style="margin:6px 0 10px">ใช้ได้เฉพาะเมื่อคุณบันทึกคีย์ AI แบบมี PIN เท่านั้น</p>
-    <label>PIN ใหม่ (4–12 ตัวเลข)</label>
-    <input type="password" id="cp-new1" inputmode="numeric" maxlength="12">
+  <div class="modal-card" style="max-width:400px">
+    <h2>🔐 เปลี่ยน PIN เข้ารหัส</h2>
+    <p class="sub">PIN ใช้เข้ารหัสคีย์ AI ในเครื่องนี้เท่านั้น (4–12 ตัวเลข)</p>
+    <label>PIN ใหม่</label>
+    <input type="password" id="cp-new1" maxlength="12" placeholder="••••">
     <label>ยืนยัน PIN ใหม่</label>
-    <input type="password" id="cp-new2" inputmode="numeric" maxlength="12">
+    <input type="password" id="cp-new2" maxlength="12" placeholder="••••">
     <div class="msg-err" id="cp-err"></div>
     <div class="flex mt">
-      <button class="btn primary" id="cp-save" style="flex:1">บันทึก</button>
+      <button class="btn primary" id="cp-save">บันทึก PIN</button>
       <button class="btn" id="cp-cancel">ยกเลิก</button>
     </div>
   </div>
@@ -390,20 +555,13 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
 <div id="toast" class="toast hidden"></div>
 
 <script>
-/* =====================================================================
-   TokenScore — single-file crypto scoring + AI analysis
-   ความปลอดภัย: ไม่มี API key ฝังในโค้ด • คีย์ AI เข้ารหัส AES-GCM ด้วย PIN
-   ของผู้ใช้ เก็บใน localStorage ของเบราว์เซอร์เครื่องผู้ใช้เท่านั้น
-   ===================================================================== */
-'use strict';
-
-/* ---------------- ค่าคงที่ ---------------- */
+/* ==================================================
+   TokenScore Core Engine & Early Buy Scanner
+   ================================================== */
 const CG = 'https://api.coingecko.com/api/v3';
-/* หมายเหตุ: ts_pin/ts_vault มีไว้สำหรับผู้ใช้ที่นำคีย์ AI ของตัวเองมาใช้ —
-   คีย์จะถูกเข้ารหัส AES-GCM ด้วย PIN ส่วนตัวของผู้นั้น เก็บในเบราว์เซอร์ของเขาเท่านั้น */
 const LS = { pin:'ts_pin_v1', vault:'ts_vault_v1', prefs:'ts_prefs_v1', usage:'ts_usage_v1' };
-const AI_LIMIT_HOUR = 12;          // จำกัดการเรียก AI ต่อชั่วโมง (กันคีย์ถูกใช้เกินงบ)
-const AI_LIMIT_FREE_HOUR = 20;     // โควตาบริการ AI ฟรี (ต่อผู้ใช้ต่อชั่วโมง)
+const AI_LIMIT_HOUR = 12;
+const AI_LIMIT_FREE_HOUR = 20;
 const PROVIDERS = {
   openrouter:   { name:'OpenRouter',            base:'https://openrouter.ai/api/v1',    model:'deepseek/deepseek-chat' },
   openai:       { name:'OpenAI',                base:'https://api.openai.com/v1',       model:'gpt-4o-mini' },
@@ -412,7 +570,12 @@ const PROVIDERS = {
   custom:       { name:'กำหนดเอง',               base:'',                                model:'' }
 };
 const DEFAULT_AI = { base:'https://text.pollinations.ai/openai', model:'openai', key:'', provider:'pollinations' };
-const AI_TIP = 'เคล็ดลับ: AI ฟรีสาธารณะอาจตอบช้าหรือเต็มเป็นช่วง ๆ — ใช้คีย์ของคุณเอง (OpenAI / OpenRouter / Groq) เพื่อความเร็วและความเสถียร (ดูใน ⚙️ ตั้งค่า)';
+const AI_TIP = 'เคล็ดลับ: AI ฟรีสาธารณะอาจตอบช้าเป็นช่วง ๆ — คุณสามารถใส่ API Key ของตัวเอง (OpenAI / OpenRouter / Groq) ใน ⚙️ ตั้งค่า เพื่อความเสถียรสูงสุด';
+
+const STABLE_SYMBOLS = new Set([
+  'usdt','usdc','dai','usds','usde','usdg','rlusd','usd1','fdusd','tusd','pyusd','usdd',
+  'frax','crvusd','xaut','paxg','ustc','busd','gusd','lusd'
+]);
 
 /* ---------------- utils ---------------- */
 const $ = s => document.querySelector(s);
@@ -442,6 +605,7 @@ function fmtPrice(n, rate=1){
 const CUR = { USD:{sym:'$', rate:1}, THB:{sym:'฿', rate:1} };
 function pctCls(v){ return v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'flat'; }
 function pctTxt(v){ return (v>0?'+':'') + round(v,1) + '%'; }
+
 function colorForScore(s){
   if (s >= 75) return '#2dd4a7';
   if (s >= 62) return '#8ee06a';
@@ -450,11 +614,11 @@ function colorForScore(s){
   return '#f4576e';
 }
 function gradeFor(s){
-  if (s >= 90) return 'A+';
-  if (s >= 80) return 'A';
-  if (s >= 75) return 'B+';
-  if (s >= 65) return 'B';
-  if (s >= 50) return 'C';
+  if (s >= 88) return 'A+';
+  if (s >= 78) return 'A';
+  if (s >= 68) return 'B+';
+  if (s >= 58) return 'B';
+  if (s >= 48) return 'C';
   if (s >= 35) return 'D';
   return 'F';
 }
@@ -465,6 +629,14 @@ function signalFor(s){
   if (s >= 35) return { t:'ลดสัดส่วน (Sell)', c:'#f79a4e' };
   return { t:'หลีกเลี่ยง (Strong Sell)', c:'#f4576e' };
 }
+function isStableCoin(c){
+  const sym = (c.symbol || '').toLowerCase();
+  if (STABLE_SYMBOLS.has(sym)) return true;
+  const p = c.current_price || 0;
+  if (Math.abs(p - 1.0) < 0.03 && Math.abs(c.price_change_percentage_24h || 0) < 0.6 && Math.abs(c.price_change_percentage_7d_in_currency || 0) < 0.8) return true;
+  return false;
+}
+
 async function sha256hex(str){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
@@ -480,7 +652,7 @@ function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 function b64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
 function unb64(s){ return new Uint8Array(atob(s).split('').map(c => c.charCodeAt(0))); }
 
-/* ---------------- storage (localStorage ปลอดภัย + เข้ารหัส) ---------------- */
+/* ---------------- Storage & Vault ---------------- */
 const store = (() => {
   let mem = {};
   let ok = true;
@@ -494,7 +666,6 @@ const store = (() => {
   };
 })();
 
-/* เข้ารหัส/ถอดรหัส vault ด้วย PIN (PBKDF2 + AES-GCM 256) */
 async function deriveKey(pin, saltBytes, iterations=210000){
   const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey(
@@ -515,7 +686,6 @@ async function decryptJSON(bundle, pin){
   return JSON.parse(new TextDecoder().decode(pt));
 }
 async function hashPin(pin){
-  // salt คงที่เฉพาะแฮชยืนยัน (vault ใช้ salt สุ่มแยก) — แฮชอย่างเดียวไม่พอจะถอด vault ได้
   return sha256hex('ts::v1::' + pin + '::tokenscore');
 }
 const vault = {
@@ -523,10 +693,8 @@ const vault = {
   async load(pin){
     const raw = store.get(LS.vault);
     if (!raw) return null;
-    try { return await decryptJSON(JSON.parse(raw), pin); }
-    catch(e){ return null; }
+    try { return await decryptJSON(JSON.parse(raw), pin); } catch(e){ return null; }
   },
-  /* โหลดโดยไม่ต้องใช้ PIN ได้เฉพาะคีย์ฟรีที่ผู้ใช้จงใจบันทึกเป็นสาธารณะ (checkbox) เท่านั้น */
   async loadPublic(){
     try {
       const d = JSON.parse(store.get('ts_public_ai_v1') || 'null');
@@ -538,24 +706,27 @@ const vault = {
   clear(){ store.del(LS.vault); store.del(LS.pin); }
 };
 
-/* ---------------- state ---------------- */
+/* ---------------- State ---------------- */
 const state = {
   unlocked: false,
   pin: null,
   ai: { ...DEFAULT_AI },
   currency: 'USD',
   rate: 1,
-  coins: [],
   markets: [],
   global: null,
-  sort: { k:'score', dir:-1 },
+  mode: 'early',               // 'early' | 'all' | 'squeeze' | 'reversal' | 'oversold' | 'momentum'
+  filterHidePumped: true,      // ซ่อนเหรียญที่วิ่งไปแล้ว
+  filterHideStable: true,      // ซ่อน Stablecoins
+  filterOnlyHighScore: false,  // เฉพาะ Early Score >= 70
+  sort: { k:'earlyScore', dir:-1 },
   search: '',
-  detail: null,          // coin ที่เปิดอยู่
-  detailData: null,      // ผลคำนวณ
+  detail: null,
+  detailData: null,
   ohlcCache: new Map(),
-  lastActivity: Date.now(),
   drawerTab: 'score'
 };
+
 function prefs(){
   try { return JSON.parse(store.get(LS.prefs) || '{}'); } catch(e){ return {}; }
 }
@@ -567,7 +738,7 @@ function saveUsage(u){ store.set(LS.usage, JSON.stringify(u)); }
 function isFreeAI(cfg){ return !cfg || !cfg.key || !!(PROVIDERS[cfg.provider] && PROVIDERS[cfg.provider].free); }
 function aiCallsLeft(freeAware){
   const u = usage();
-  const today = new Date().toISOString().slice(0,13); // นับเป็นรายชั่วโมง
+  const today = new Date().toISOString().slice(0,13);
   const limit = (freeAware && isFreeAI(state.ai)) ? AI_LIMIT_FREE_HOUR : AI_LIMIT_HOUR;
   if (u.d !== today) return limit;
   return Math.max(0, limit - u.n);
@@ -589,7 +760,7 @@ function updateUsageUI(){
 }
 
 /* ==================================================
-   ส่วนคำนวณอินดิเคเตอร์ (pure functions)
+   อินดิเคเตอร์ทางเทคนิค (Pure Functions)
    ================================================== */
 function sma(arr, n){
   if (!arr || arr.length < n) return [];
@@ -650,14 +821,16 @@ function bollinger(arr, n=20, k=2){
   const mid = sma(arr, n);
   const up = new Array(arr.length).fill(null), low = new Array(arr.length).fill(null);
   const pctB = new Array(arr.length).fill(null);
+  const bw = new Array(arr.length).fill(null);
   for (let i = n-1; i < arr.length; i++){
     const win = arr.slice(i-n+1, i+1);
     const m = win.reduce((a,b)=>a+b,0)/n;
     const sd = Math.sqrt(win.reduce((a,b)=>a+(b-m)*(b-m),0)/n);
     up[i] = m + k*sd; low[i] = m - k*sd;
     pctB[i] = (arr[i]-low[i])/((up[i]-low[i]) || 1e-12);
+    bw[i] = m > 0 ? (up[i]-low[i])/m : 0;
   }
-  return { mid, up, low, pctB };
+  return { mid, up, low, pctB, bw };
 }
 function atr(candles, n=14){
   const trs = [null];
@@ -685,11 +858,189 @@ function lastN(arr, n){
   return arr.filter(v => v !== null && v !== undefined).slice(-n);
 }
 
-/* ---- วิเคราะห์จากแท่ง OHLC ---- */
+/* ==================================================
+   เรดาร์และโมเดลคำนวณเหรียญต้นน้ำ (Early Buy / Pre-Pump Engine)
+   ================================================== */
+function analyzeSparkline(prices, coin){
+  if (!prices || prices.length < 25) return null;
+  const rsiArr = rsi(prices, 14);
+  const m = macd(prices, 12, 26, 9);
+  const bb = bollinger(prices, 20, 2);
+  const n = prices.length;
+
+  const lastPrice = prices[n-1];
+  const lastRSI = rsiArr[n-1] ?? 50;
+  const prevRSI = rsiArr[n-2] ?? lastRSI;
+  const lastHist = m.hist[n-1] ?? 0;
+  const prevHist = m.hist[n-2] ?? 0;
+  const lastMacd = m.line[n-1] ?? 0;
+  const lastSig = m.signal[n-1] ?? 0;
+  const prevMacd = m.line[n-2] ?? 0;
+  const prevSig = m.signal[n-2] ?? 0;
+  const lastPctB = bb.pctB[n-1] ?? 0.5;
+  const lastBW = bb.bw[n-1] ?? 0.05;
+
+  const validBW = bb.bw.filter(v => v !== null && v !== undefined);
+  const minBW = validBW.length ? Math.min(...validBW) : 0.03;
+  const maxBW = validBW.length ? Math.max(...validBW) : 0.15;
+  const bwRange = (maxBW - minBW) || 1e-6;
+  const bwPercentile = clamp((lastBW - minBW) / bwRange, 0, 1);
+  const isSqueeze = bwPercentile <= 0.32; // Volatility compression
+
+  const isMacdGoldenCross = (prevMacd <= prevSig && lastMacd > lastSig) || (lastHist > 0 && prevHist <= 0);
+  const isMacdHistTurningUp = lastHist > prevHist;
+  const isRsiRebound = lastRSI > prevRSI && lastRSI <= 52;
+  const isRsiOversold = lastRSI < 35;
+  const isOverbought = lastRSI > 68;
+
+  const min7d = Math.min(...prices);
+  const max7d = Math.max(...prices);
+  const distFromLow = max7d > min7d ? (lastPrice - min7d) / (max7d - min7d) : 0.5;
+
+  const c24 = coin.price_change_percentage_24h ?? 0;
+  const c7  = coin.price_change_percentage_7d_in_currency ?? 0;
+  const c30 = coin.price_change_percentage_30d_in_currency ?? 0;
+
+  // Stablecoins get 0 early buy score
+  if (isStableCoin(coin)){
+    return {
+      rsi: round(lastRSI, 1),
+      isSqueeze: false,
+      isMacdGoldenCross: false,
+      isMacdHistTurningUp: false,
+      isRsiRebound: false,
+      isRsiOversold: false,
+      isOverbought: false,
+      earlyBuyScore: 0,
+      tags: [{ id:'stable', icon:'🪙', text:'Stablecoin / สินทรัพย์ตรึงราคา', type:'flat' }],
+      summary: 'สินทรัพย์ตรึงมูลค่า (Stablecoin) — ไม่จัดอยู่ในเหรียญเก็งกำไร'
+    };
+  }
+
+  // 1. Unpumped Price Score (30%) — ราคายังไม่พุ่ง
+  let unpumped24 = 50;
+  if (c24 >= -3 && c24 <= 3) unpumped24 = 100;
+  else if (c24 > 3 && c24 <= 7) unpumped24 = 75;
+  else if (c24 > 7 && c24 <= 12) unpumped24 = 40;
+  else if (c24 > 12) unpumped24 = Math.max(0, 30 - (c24-12)*3);
+  else if (c24 < -3 && c24 >= -8) unpumped24 = 70;
+  else unpumped24 = Math.max(10, 50 + c24*2);
+
+  let unpumped7 = 50;
+  if (c7 >= -8 && c7 <= 5) unpumped7 = 100;
+  else if (c7 > 5 && c7 <= 15) unpumped7 = 65;
+  else if (c7 > 15 && c7 <= 30) unpumped7 = 35;
+  else if (c7 > 30) unpumped7 = Math.max(0, 20 - (c7-30)*2);
+  else if (c7 < -8 && c7 >= -18) unpumped7 = 75;
+  else unpumped7 = Math.max(15, 60 + c7);
+
+  const priceScore = unpumped24 * 0.5 + unpumped7 * 0.5;
+
+  // 2. RSI Zone & Reversal Score (25%) — RSI โซนสะสม
+  let rsiScore = 50;
+  if (lastRSI < 30) rsiScore = 85;
+  else if (lastRSI >= 30 && lastRSI <= 46) rsiScore = 100;
+  else if (lastRSI > 46 && lastRSI <= 54) rsiScore = 80;
+  else if (lastRSI > 54 && lastRSI <= 64) rsiScore = 50;
+  else if (lastRSI > 64 && lastRSI <= 72) rsiScore = 20;
+  else rsiScore = 0;
+
+  if (isRsiRebound) rsiScore = Math.min(100, rsiScore + 10);
+
+  // 3. MACD Momentum Shift (20%) — กำลังกลับตัวบวก
+  let macdScore = 50;
+  if (isMacdGoldenCross) macdScore = 100;
+  else if (lastHist > 0 && isMacdHistTurningUp) macdScore = 90;
+  else if (lastHist < 0 && isMacdHistTurningUp) macdScore = 85;
+  else if (lastHist > 0 && !isMacdHistTurningUp) macdScore = 55;
+  else macdScore = 25;
+
+  // 4. Bollinger Squeeze & Support (15%)
+  let bbScore = 50;
+  if (isSqueeze) bbScore += 30;
+  if (lastPctB >= 0.15 && lastPctB <= 0.6) bbScore += 20;
+  else if (lastPctB > 0.85) bbScore -= 30;
+  bbScore = clamp(bbScore, 0, 100);
+
+  // 5. Volume & Liquidity Support (10%)
+  const liq = coin.total_volume && coin.market_cap ? (coin.total_volume / coin.market_cap) : 0.05;
+  let liqScore = clamp(liq * 250, 30, 95);
+  if (distFromLow <= 0.35) liqScore += 10;
+
+  let earlyTotal = Math.round(
+    priceScore * 0.30 +
+    rsiScore * 0.25 +
+    macdScore * 0.20 +
+    bbScore * 0.15 +
+    liqScore * 0.10
+  );
+
+  // Penalty if already pumped hard in 30d
+  if (c30 > 70) earlyTotal = Math.round(earlyTotal * 0.82);
+  if (c7 > 35 || c24 > 15 || lastRSI > 70) earlyTotal = Math.min(earlyTotal, 45);
+
+  earlyTotal = clamp(earlyTotal, 0, 100);
+
+  // Badges & Signals
+  const tags = [];
+  if (isSqueeze) tags.push({ id:'squeeze', icon:'🗜️', text:'BB Squeeze บีบตัวจ่อระเบิด', cls:'squeeze-tag' });
+  if (isMacdGoldenCross) tags.push({ id:'macd_cross', icon:'🔥', text:'MACD Golden Cross', cls:'cross-tag' });
+  else if (lastHist < 0 && isMacdHistTurningUp) tags.push({ id:'macd_turn', icon:'🔄', text:'MACD แรงขายหดกลับตัว', cls:'cross-tag' });
+  if (isRsiOversold) tags.push({ id:'rsi_oversold', icon:'📉', text:'RSI Oversold โซนรับ', cls:'early-tag' });
+  else if (isRsiRebound) tags.push({ id:'rsi_rebound', icon:'🎯', text:'RSI ฟื้นตัวจากโซนล่าง', cls:'early-tag' });
+  if (c24 >= -2 && c24 <= 3 && c7 >= -6 && c7 <= 4) tags.push({ id:'base', icon:'📦', text:'สร้างฐานสะสมพลัง', cls:'early-tag' });
+  if (c24 > 12 || c7 > 35 || lastRSI > 70) tags.push({ id:'pumped', icon:'⚠️', text:'ราคาพุ่งไปแล้ว (เสี่ยงไล่ราคา)', cls:'pumped-tag' });
+
+  // Strategic Summary for Spotlight
+  let summary = '';
+  if (earlyTotal >= 78){
+    summary = `ราคาพักตัวในกรอบสะสม 7 วัน • RSI ${round(lastRSI,1)} อยู่ในโซนสะสม • ${isSqueeze ? 'Bollinger Bands บีบตัวแคบ (จ่อเบรกเอาท์)' : 'MACD จ่อตัดขึ้น'}`;
+  } else if (earlyTotal >= 65){
+    summary = `ราคาทรงตัวดี • โมเมนตัมเริ่มฟื้นตัวจากโซนล่าง • น่าจับตารอจังหวะเบรกกรอบ`;
+  } else if (c24 > 10 || c7 > 30 || lastRSI > 70){
+    summary = `ราคาพุ่งขึ้นมาแรงแล้ว (RSI ${round(lastRSI,1)}) — ควรระวังการไล่ราคา รอจังหวะย่อตัว`;
+  } else {
+    summary = `ราคากำลังไซด์เวย์ในกรอบ — รอสัญญาณอินดิเคเตอร์ยืนยัน`;
+  }
+
+  return {
+    rsi: round(lastRSI, 1),
+    isSqueeze,
+    isMacdGoldenCross,
+    isMacdHistTurningUp,
+    isRsiRebound,
+    isRsiOversold,
+    isOverbought,
+    pctB: round(lastPctB, 2),
+    distFromLow: round(distFromLow, 2),
+    earlyBuyScore: earlyTotal,
+    tags,
+    summary,
+    priceScore: Math.round(priceScore),
+    rsiScore: Math.round(rsiScore),
+    macdScore: Math.round(macdScore),
+    bbScore: Math.round(bbScore)
+  };
+}
+
+/* ---- คะแนนเร็ว (Quick Score ปกติ) ---- */
+function quickScore(c){
+  const c24 = c.price_change_percentage_24h ?? 0;
+  const c7  = c.price_change_percentage_7d_in_currency ?? 0;
+  const c30 = c.price_change_percentage_30d_in_currency ?? 0;
+  const liq = c.total_volume && c.market_cap ? c.total_volume/c.market_cap : 0;
+  let s = 50
+    + clamp(c24*2.5, -28, 28)*0.35
+    + clamp(c7*1.3,  -30, 30)*0.35
+    + clamp(c30*0.8, -25, 25)*0.30
+    + clamp(liq*80, 0, 12);
+  return clamp(Math.round(s), 0, 100);
+}
+
+/* ---- วิเคราะห์เชิงลึกจากแท่ง OHLC 30 วัน (4 ชั่วโมง) ---- */
 function analyze(candles){
-  // candles: [ [ts, o, h, l, c], ... ]
   const close = candles.map(c => c[4]);
-  const vol = candles.map(c => 0); // ohlc endpoint ไม่มี volume → ใช้ proxy จาก range
+  const vol = candles.map(c => 0);
   for (let i = 1; i < candles.length; i++) vol[i] = (candles[i][2]-candles[i][3]) + Math.abs(candles[i][4]-candles[i][1]);
   const t = candles.map(c => c[0]);
 
@@ -707,13 +1058,11 @@ function analyze(candles){
   const a = last(atrArr).v;
   const atrPct = a && close[iLast] ? a/close[iLast] : null;
 
-  // returns รายวันโดยประมาณ (log)
   const rets = [];
   for (let i = 1; i < close.length; i++) if (close[i-1]) rets.push(Math.log(close[i]/close[i-1]));
   const vol30 = rets.length > 5 ? stdev(rets) : null;
 
   const roc10 = close[iLast-10] ? (close[iLast]/close[iLast-10] - 1) * 100 : null;
-  // volume momentum: ช่วงล่าสุด 12 แท่ง (≈2 วัน) เทียบ 72 แท่งก่อนหน้า (≈12 วัน)
   const volRecent = lastN(vol, 12).reduce((x,y)=>x+y,0)/12;
   const volPrior = vol.slice(-84, -12);
   const volMom = volPrior.length >= 12 ? volRecent/(volPrior.reduce((x,y)=>x+y,0)/volPrior.length) - 1 : null;
@@ -726,55 +1075,60 @@ function analyze(candles){
   const crossBull = hist !== null && hist > 0 && histPrev !== null && histPrev <= 0;
   const crossBear = hist !== null && hist < 0 && histPrev !== null && histPrev >= 0;
 
+  // Bandwidth history & Squeeze
+  const validBW = bb.bw.filter(v => v !== null && v !== undefined);
+  const minBW = validBW.length ? Math.min(...validBW) : 0.05;
+  const maxBW = validBW.length ? Math.max(...validBW) : 0.2;
+  const lastBW = last(bb.bw).v || 0.05;
+  const bwPercentile = clamp((lastBW - minBW)/((maxBW - minBW) || 1e-6), 0, 1);
+  const isSqueeze = bwPercentile <= 0.28;
+
   return {
     candles, close, vol, t, sma20, sma50, rsiArr, macdLine:m.line, macdSig:m.signal, macdHist:m.hist,
-    bb, atrArr,
+    bb, atrArr, a,
     price: close[iLast],
     r14, macdHistNow:hist, macdHistPrev:histPrev, pctB, atrPct, vol30, roc10, volMom, nearHigh,
-    hi30, lo30, macdNorm, crossBull, crossBear
+    hi30, lo30, macdNorm, crossBull, crossBear,
+    isSqueeze, bwPercentile
   };
 }
 
-/* ---- โมเดลให้คะแนน (0–100) ---- */
+/* ---- คะแนนเต็ม (0–100) ---- */
 function computeScore(d){
   const pv20 = d.sma20[d.sma20.length-1] ? (d.price/d.sma20[d.sma20.length-1] - 1) : 0;
   const v2050 = (d.sma20[d.sma20.length-1] && d.sma50[d.sma50.length-1]) ? (d.sma20[d.sma20.length-1]/d.sma50[d.sma50.length-1] - 1) : 0;
 
-  // --- เทรนด์ (25%) ---
   let trend = 50 + clamp(pv20*300, -22, 22) + clamp(v2050*400, -18, 18) + clamp(d.macdNorm*9000, -8, 8);
   if (d.crossBull) trend += 8; if (d.crossBear) trend -= 8;
   trend = clamp(trend, 0, 100);
 
-  // --- โมเมนตัม (25%) ---
   let rsiScore;
   if (d.r14 === null) rsiScore = 50;
   else if (d.r14 < 25) rsiScore = 35;
   else if (d.r14 < 35) rsiScore = 50;
-  else if (d.r14 < 45) rsiScore = 62;
-  else if (d.r14 < 60) rsiScore = 78;
+  else if (d.r14 < 45) rsiScore = 65;
+  else if (d.r14 < 60) rsiScore = 80;
   else if (d.r14 < 70) rsiScore = 85;
-  else if (d.r14 < 80) rsiScore = 58;
-  else rsiScore = 30;
+  else if (d.r14 < 80) rsiScore = 55;
+  else rsiScore = 25;
+
   const rocScore = d.roc10 === null ? 50 : clamp(50 + d.roc10*4.5, 0, 100);
   const momentum = clamp(rsiScore*0.6 + rocScore*0.4, 0, 100);
 
-  // --- ความเสี่ยง (20%) : ความผันผวนต่ำ = คะแนนสูง ---
   const atrScore = d.atrPct === null ? 50 : clamp(100 - d.atrPct*1400, 0, 100);
   const volScore = d.vol30 === null ? 50 : clamp(100 - d.vol30*1600, 0, 100);
   const risk = clamp(atrScore*0.55 + volScore*0.45, 0, 100);
 
-  // --- วอลุ่ม (15%) ---
   const vmScore = d.volMom === null ? 50 : clamp(50 + d.volMom*45, 0, 100);
   const vol = clamp(vmScore, 0, 100);
 
-  // --- สภาพสุดโต่ง (15%) ---
   let extPen = 0;
   if (d.r14 !== null){
-    if (d.r14 > 75) extPen += (d.r14-75)*3.2;      // overbought
-    if (d.r14 < 25) extPen += (25-d.r14)*2.5;      // oversold
+    if (d.r14 > 75) extPen += (d.r14-75)*3.2;
+    if (d.r14 < 25) extPen += (25-d.r14)*2.5;
   }
-  if (d.nearHigh > 0.985) extPen += (d.nearHigh-0.985)*400;   // เกือบแตะ high 30 วัน
-  if (d.nearHigh < 0.6) extPen += 10;                          // อยู่ในโซนล่างของช่วง
+  if (d.nearHigh > 0.985) extPen += (d.nearHigh-0.985)*400;
+  if (d.nearHigh < 0.6) extPen += 10;
   const extremes = clamp(50 + (d.nearHigh-0.85)*250 - extPen, 0, 100);
 
   const parts = [
@@ -788,22 +1142,8 @@ function computeScore(d){
   return { total: clamp(total, 0, 100), parts };
 }
 
-/* ---- คะแนนเร็ว (จากข้อมูลตลาด ไม่ต้องโหลด OHLC) ---- */
-function quickScore(c){
-  const c24 = c.price_change_percentage_24h ?? 0;
-  const c7  = c.price_change_percentage_7d_in_currency ?? 0;
-  const c30 = c.price_change_percentage_30d_in_currency ?? 0;
-  const liq = c.total_volume && c.market_cap ? c.total_volume/c.market_cap : 0;
-  let s = 50
-    + clamp(c24*2.5, -28, 28)*0.35
-    + clamp(c7*1.3,  -30, 30)*0.35
-    + clamp(c30*0.8, -25, 25)*0.30
-    + clamp(liq*80, 0, 12);
-  return clamp(Math.round(s), 0, 100);
-}
-
 /* ==================================================
-   ข้อมูลตลาด (CoinGecko — สาธารณะ ไม่ต้องใช้คีย์)
+   ข้อมูลตลาด (CoinGecko)
    ================================================== */
 async function cgFetch(path, params, retries = 3){
   const url = CG + path + '?' + new URLSearchParams(params).toString();
@@ -825,8 +1165,18 @@ async function loadMarkets(){
     vs_currency:'usd', order:'market_cap_desc', per_page:50, page:1,
     sparkline:true, price_change_percentage:'1h,24h,7d,14d,30d'
   });
-  state.markets = data;
-  return data;
+  if (Array.isArray(data)){
+    // คำนวณอินดิเคเตอร์และคะแนนต้นน้ำสำหรับทุกเหรียญทันที
+    data.forEach(c => {
+      const sp = c.sparkline_in_7d && c.sparkline_in_7d.price;
+      c._analysis = analyzeSparkline(sp, c);
+      c._earlyScore = c._analysis ? c._analysis.earlyBuyScore : 0;
+      c._quickScore = quickScore(c);
+      c._isStable = isStableCoin(c);
+    });
+  }
+  state.markets = data || [];
+  return state.markets;
 }
 async function loadGlobal(){
   const data = await cgFetch('/global', {});
@@ -845,22 +1195,20 @@ async function loadOHLC(id){
   const hit = state.ohlcCache.get(id);
   if (hit && now - hit.ts < 10*60*1000) return hit.data;
   const data = await cgFetch('/coins/' + encodeURIComponent(id) + '/ohlc', { vs_currency:'usd', days:30 });
-  if (!data || data.length < 60) return null;
+  if (!data || data.length < 50) return null;
   state.ohlcCache.set(id, { ts: now, data });
   return data;
 }
 
 /* ==================================================
-   AI (เรียกตรงจากเบราว์เซอร์ → ผู้ให้บริการที่ผู้ใช้เลือก)
-   คีย์อยู่ใน vault เข้ารหัส — ไม่มีทางรั่วผ่านโค้ด GitHub
+   AI Engine
    ================================================== */
 function httpsOK(){
   return location.protocol === 'https:' || ['localhost','127.0.0.1','::1'].includes(location.hostname);
 }
-async function callAI(messages, { stream=false } = {}){
+async function callAI(messages){
   if (!state.ai.base) throw new Error('ยังไม่ได้ตั้งค่า AI');
-  if (state.ai.key === '' && !isFreeAI(state.ai))
-    throw new Error('ยังไม่ได้กรอก API Key');
+  if (state.ai.key === '' && !isFreeAI(state.ai)) throw new Error('ยังไม่ได้กรอก API Key');
   if (!httpsOK()) throw new Error('SECURITY: หน้านี้เปิดผ่าน HTTP — ปิดการเรียก AI เพื่อความปลอดภัย');
   const left = aiCallsLeft(true);
   if (left <= 0) throw new Error('ถึงขีดจำกัดการใช้งาน AI ในชั่วโมงนี้ — กรุณารอชั่วโมงถัดไป หรือใช้คีย์ของคุณเอง');
@@ -880,15 +1228,15 @@ async function callAI(messages, { stream=false } = {}){
       body: JSON.stringify({
         model: state.ai.model,
         messages,
-        temperature: 0.4,
-        max_tokens: 1500
+        temperature: 0.35,
+        max_tokens: 1600
       })
     });
-    if (res.status === 401) throw new Error('API Key ไม่ถูกต้อง (401) — ตรวจคีย์ในตั้งค่า');
-    if (res.status === 402) throw new Error('เครดิตหมด (402) — เติมเงินที่เว็บผู้ให้บริการ');
-    if (res.status === 403) throw new Error('ไม่มีสิทธิ์ (403) — ตรวจคีย์/สิทธิ์โมเดล');
-    if (res.status === 404) throw new Error('ไม่พบโมเดลหรือ endpoint (404) — ตรวจ Base URL / ชื่อโมเดล');
-    if (res.status === 429) throw new Error('Rate limit ของผู้ให้บริการ (429) — รอสักครู่แล้วลองใหม่');
+    if (res.status === 401) throw new Error('API Key ไม่ถูกต้อง (401)');
+    if (res.status === 402) throw new Error('เครดิตหมด (402)');
+    if (res.status === 403) throw new Error('ไม่มีสิทธิ์เข้าถึง (403)');
+    if (res.status === 404) throw new Error('ไม่พบโมเดลหรือ URL ไม่ถูกต้อง (404)');
+    if (res.status === 429) throw new Error('Rate limit ของผู้ให้บริการ (429) — ลองใหม่ใน 1-2 นาที');
     if (!res.ok) throw new Error('ผู้ให้บริการตอบ HTTP ' + res.status);
     const js = await res.json();
     spendAiCall();
@@ -897,8 +1245,8 @@ async function callAI(messages, { stream=false } = {}){
     if (!txt) throw new Error('ได้คำตอบว่างจาก AI');
     return txt;
   } catch(e){
-    if (e.name === 'AbortError') throw new Error('หมดเวลา (120 วินาที) — โมเดลอาจช้าเกินไป ลองเปลี่ยนโมเดล');
-    if (e instanceof TypeError) throw new Error('เชื่อมต่อไม่ได้ (CORS/เครือข่าย) — ผู้ให้บริการนี้อาจไม่อนุญาตให้เรียกจากเบราว์เซอร์ ใช้ OpenAI / OpenRouter / Groq / Pollinations');
+    if (e.name === 'AbortError') throw new Error('หมดเวลา (120 วินาที) — โมเดลช้าเกินไป ลองเปลี่ยนโมเดล');
+    if (e instanceof TypeError) throw new Error('เชื่อมต่อไม่ได้ (CORS/เครือข่าย) — แนะนำ OpenAI / OpenRouter / Groq / Pollinations');
     throw e;
   } finally {
     clearTimeout(timer);
@@ -908,37 +1256,39 @@ async function callAI(messages, { stream=false } = {}){
 function buildAIPrompt(coin, d, score){
   const cur = state.currency;
   const rate = state.rate;
-  return `คุณคือผู้จัดการกองทุนคริปโตมืออาชีพที่มีประสบการณ์ 15 ปี วิเคราะห์ด้วยมุมมองของนักลงทุนสถาบัน
+  const an = coin._analysis;
+  const earlyScore = an ? an.earlyBuyScore : 50;
 
-เหรียญ: ${coin.name} (${coin.symbol.toUpperCase()}) อันดับ Market Cap: #${coin.market_cap_rank}
-ราคา: ${fmtPrice(coin.current_price, rate)} ${cur} | Market Cap: ${fmtNum(coin.market_cap*rate)} ${cur}
-เปลี่ยนแปลง: 24ชม. ${pctTxt(coin.price_change_percentage_24h ?? 0)} | 7วัน ${pctTxt(coin.price_change_percentage_7d_in_currency ?? 0)} | 30วัน ${pctTxt(coin.price_change_percentage_30d_in_currency ?? 0)}
+  return `คุณคือผู้จัดการกองทุนคริปโตและนักวางกลยุทธ์เทรดระดับมืออาชีพ (15+ ปีประสบการณ์)
+ให้วิเคราะห์เหรียญนี้อย่างเฉียบคม เน้นตอบโจทย์: "ราคายังไม่พุ่งหรือวิ่งไปแล้ว? และอินดิเคเตอร์บอกจังหวะซื้อต้นน้ำหรือไม่?"
 
-ข้อมูลอินดิเคเตอร์ (แท่ง 4 ชม., 30 วัน):
-- RSI(14): ${d.r14 === null ? 'N/A' : round(d.r14,1)}
-- MACD Histogram: ${d.macdHistNow === null ? 'N/A' : round(d.macdHistNow,6)}${d.crossBull ? ' (เพิ่งเกิด Bullish Cross)' : ''}${d.crossBear ? ' (เพิ่งเกิด Bearish Cross)' : ''}
-- ราคา vs SMA20: ${d.sma20[d.sma20.length-1] ? pctTxt((d.price/d.sma20[d.sma20.length-1]-1)*100) : 'N/A'} | SMA20 vs SMA50: ${(d.sma20[d.sma20.length-1] && d.sma50[d.sma50.length-1]) ? pctTxt((d.sma20[d.sma20.length-1]/d.sma50[d.sma50.length-1]-1)*100) : 'N/A'}
-- Bollinger %B: ${d.pctB === null ? 'N/A' : round(d.pctB,2)}
-- ATR(14): ${d.atrPct === null ? 'N/A' : round(d.atrPct*100,2) + '% ของราคา'}
-- ความผันผวน 30 แท่ง: ${d.vol30 === null ? 'N/A' : round(d.vol30*100,2) + '%'}
-- ROC(10): ${d.roc10 === null ? 'N/A' : round(d.roc10,1) + '%'}
-- Volume Momentum: ${d.volMom === null ? 'N/A' : round(d.volMom*100,1) + '%'}
-- ราคาอยู่ที่ ${round(d.nearHigh*100,0)}% ของช่วง High/Low 30 วัน (High ${fmtPrice(d.hi30,rate)}, Low ${fmtPrice(d.lo30,rate)})
+ข้อมูลสินทรัพย์:
+- เหรียญ: ${coin.name} (${coin.symbol.toUpperCase()}) Market Cap Rank: #${coin.market_cap_rank}
+- ราคาปัจจุบัน: ${fmtPrice(coin.current_price, rate)} ${cur}
+- การเปลี่ยนแปลง: 24ชม. ${pctTxt(coin.price_change_percentage_24h ?? 0)} | 7วัน ${pctTxt(coin.price_change_percentage_7d_in_currency ?? 0)} | 30วัน ${pctTxt(coin.price_change_percentage_30d_in_currency ?? 0)}
+- คะแนนต้นน้ำ (Early Buy Score): ${earlyScore}/100
+- คะแนนเทคนิคเต็ม (Full Score): ${score.total}/100 (เกรด ${gradeFor(score.total)})
 
-คะแนนระบบ TokenScore: ${score.total}/100 (${gradeFor(score.total)})
+อินดิเคเตอร์สำคัญ (แท่ง 4 ชม. 30 วัน):
+- RSI(14): ${d.r14 === null ? 'N/A' : round(d.r14,1)} (${d.r14 > 70 ? 'Overbought เสี่ยงไล่ราคา' : d.r14 < 35 ? 'Oversold โซนรับของถูก' : 'โซนสะสม 35-50'})
+- MACD Histogram: ${d.macdHistNow === null ? 'N/A' : round(d.macdHistNow,6)}${d.crossBull ? ' (Bullish Golden Cross!)' : ''}
+- Bollinger Bands %B: ${d.pctB === null ? 'N/A' : round(d.pctB,2)}${d.isSqueeze ? ' (🔥 Bollinger Squeeze กำลังบีบตัวจ่อระเบิดความผันผวน)' : ''}
+- SMA20 vs ราคา: ${d.sma20[d.sma20.length-1] ? pctTxt((d.price/d.sma20[d.sma20.length-1]-1)*100) : 'N/A'}
+- ATR (14): ${d.atrPct === null ? 'N/A' : round(d.atrPct*100,2) + '% ของราคา'} (ความผันผวนต่อแท่ง)
+- ตำแหน่งในกรอบ 30 วัน: ${Math.round(d.nearHigh*100)}% (Low: ${fmtPrice(d.lo30,rate)}, High: ${fmtPrice(d.hi30,rate)})
 
-ขอการวิเคราะห์เป็นภาษาไทย กระชับ ไม่เกิน 450 คำ ในรูปแบบ markdown ตามหัวข้อ:
-**📊 ภาพรวม** — สรุปสถานการณ์ 2-3 ประโยค
-**📈 แนวโน้ม** — ทิศทางหลัก + ระดับความแข็งแกร่งของเทรนด์
-**🎯 แนวรับ/แนวต้าน** — คำนวณจาก Bollinger, ช่วง 30 วัน และ ATR ให้เป็นตัวเลขราคา ${cur}
-**⚠️ ความเสี่ยง** — ปัจจัยเสี่ยงที่สำคัญที่สุด
-**💡 กลยุทธ์** — คำแนะนำเชิงปฏิบัติ เช่น จุดเข้าซื้อ/จุดตัดขาดทุน (stop loss) / การแบ่งไม้ (position sizing) แบบนักลงทุนอาชีพ
-**🏁 สรุป** — คะแนนความน่าสนใจลงทุนที่คุณให้ (0-100) พร้อมเหตุผลสั้น
-
-สำคัญ: วิเคราะห์บนข้อมูลจริงที่ให้มาเท่านั้น ไม่แต่งตัวเลขเพิ่ม อย่าเขียนคำนำ/คำลงท้ายแบบแชทบอท ใช้เครื่องหมาย ** สำหรับหัวข้อเท่านั้น`;
+เขียนบทวิเคราะห์ภาษาไทย กระชับ มีเหตุมีผล ชัดเจน ไม่เกิน 450 คำ ในรูปแบบ Markdown:
+**🎯 สถานะจังหวะราคา (ต้นน้ำ vs วิ่งไปแล้ว)** — สรุปว่าราคายังสด/เป็นจังหวะสะสมต้นน้ำ หรือพุ่งไปแล้วและมีความเสี่ยงไล่ราคา (FOMO)
+**📈 สัญญาณอินดิเคเตอร์คอนเวอร์เจนซ์** — อินดี้ตัวไหนบอกให้ซื้อ (RSI, MACD, BB Squeeze, SMA)
+**🎯 กรอบราคาปฏิบัติการ (${cur})**
+- โซนเข้าซื้อสะสม (Entry Zone)
+- จุดตัดขาดทุนที่แนะนำ (Stop Loss — คำนวณจากแนวรับ Bollinger / ATR)
+- เป้าหมายทำกำไร (TP1 และ TP2)
+- Risk/Reward Ratio
+**💡 กลยุทธ์การแบ่งไม้และจัดการความเสี่ยง** — แนะนำ Position Sizing แบบกองทุน
+**🏁 สรุปคำแนะนำ** — ซื้อ / ทยอยสะสม / ถือรอ / ไม่ควรไล่ราคา พร้อมเกรดความน่าสนใจ`;
 }
 
-/* ---- markdown-lite renderer (ปลอดภัย: escape ก่อนเสมอ) ---- */
 function renderMD(text){
   let html = esc(text);
   const lines = html.split(/\r?\n/);
@@ -973,58 +1323,67 @@ function renderMD(text){
   return '<p>' + h + '</p>';
 }
 
-/* ---- บทวิเคราะห์อัตโนมัติแบบ rule-based (ทำงานแม้ไม่ตั้ง AI) ---- */
 function ruleAnalysis(coin, d, score){
   const cur = state.currency, rate = state.rate;
-  const sig = signalFor(score.total);
+  const an = coin._analysis;
+  const earlyScore = an ? an.earlyBuyScore : 50;
   const L = [];
-  L.push('**📊 ภาพรวม**');
-  L.push(`${coin.name} (${coin.symbol.toUpperCase()}) ได้คะแนน TokenScore ${score.total}/100 เกรด ${gradeFor(score.total)} — สัญญาณ: ${sig.t}`);
-  L.push(`ราคาปัจจุบัน ${fmtPrice(coin.current_price, rate)} ${cur} เปลี่ยนแปลง 24ชม. ${pctTxt(coin.price_change_percentage_24h ?? 0)} และ 7 วัน ${pctTxt(coin.price_change_percentage_7d_in_currency ?? 0)}`);
 
-  L.push('**📈 แนวโน้ม**');
-  const pv20 = d.sma20[d.sma20.length-1] ? d.price/d.sma20[d.sma20.length-1] - 1 : null;
-  const v2050 = (d.sma20[d.sma20.length-1] && d.sma50[d.sma50.length-1]) ? d.sma20[d.sma20.length-1]/d.sma50[d.sma50.length-1] - 1 : null;
-  const trendTxt = pv20 === null ? 'ข้อมูลไม่เพียงพอ'
-    : (pv20 > 0.02 && v2050 > 0) ? 'เทรนด์ขาขึ้นแข็งแรง (ราคาเหนือ SMA20 และ SMA20 เหนือ SMA50)'
-    : (pv20 > 0) ? 'เทรนด์ขาขึ้นระยะสั้น แต่ยังต้องยืนยันจากเส้นระยะกลาง'
-    : (pv20 < -0.02) ? 'เทรนด์ขาลง (ราคาต่ำกว่า SMA20)'
-    : 'เทรนด์ยังไม่ชัดเจน (ไซด์เวย์)';
-  L.push(trendTxt);
-  if (d.macdHistNow !== null) L.push(`MACD ${d.macdHistNow >= 0 ? 'อยู่เหนือเส้นสัญญาณ (โมเมนตัมบวก)' : 'อยู่ใต้เส้นสัญญาณ (โมเมนตัมลบ)'}${d.crossBull ? ' และเพิ่งตัดขึ้น (Bullish Cross)' : ''}${d.crossBear ? ' และเพิ่งตัดลง (Bearish Cross)' : ''}`);
-
-  L.push('**🎯 แนวรับ/แนวต้าน**');
-  if (d.bb && d.bb.low[d.bb.low.length-1] !== null){
-    L.push(`แนวต้านระยะสั้น: ${fmtPrice(d.bb.up[d.bb.up.length-1], rate)} ${cur} (Bollinger บน) • แนวรับระยะสั้น: ${fmtPrice(d.bb.low[d.bb.low.length-1], rate)} ${cur} (Bollinger ล่าง)`);
-    L.push(`ช่วง 30 วัน: สูง ${fmtPrice(d.hi30, rate)} / ต่ำ ${fmtPrice(d.lo30, rate)} ${cur}`);
+  L.push('**🎯 ประเมินสถานะจังหวะราคา (Early Buy vs Extended)**');
+  if (earlyScore >= 75){
+    L.push(`✅ **เป็นจังหวะต้นน้ำที่น่าสนใจมาก (Early Buy Setup Score: ${earlyScore}/100)**`);
+    L.push(`ราคายังไม่พุ่งเกินไป (24ชม. ${pctTxt(coin.price_change_percentage_24h ?? 0)}, 7วัน ${pctTxt(coin.price_change_percentage_7d_in_currency ?? 0)}) ขณะที่อินดิเคเตอร์กำลังเริ่มฟื้นตัวและสะสมพลัง`);
+  } else if (coin.price_change_percentage_24h > 12 || coin.price_change_percentage_7d_in_currency > 35 || (d.r14 && d.r14 > 70)){
+    L.push(`⚠️ **ราคาพุ่งขึ้นมาระยะหนึ่งแล้ว (Overextended — ระวังการไล่ราคา)**`);
+    L.push(`ราคาปรับขึ้นแรงแล้วและ RSI อยู่ในโซนสูง (${round(d.r14,1)}) การเข้าซื้อตรงนี้มีความเสี่ยงถูกขายทำกำไร แนะนำรอจังหวะย่อตัว (Pullback) บริเวณแนวรับ`);
+  } else {
+    L.push(`🟡 **ราคากำลังสร้างฐานสะสมพลัง (Consolidation Phase)**`);
+    L.push(`ราคาวิ่งในกรอบไซด์เวย์ รอการเบรกเอาท์เพื่อยืนยันรอบใหม่`);
   }
 
-  L.push('**⚠️ ความเสี่ยง**');
-  const risks = [];
-  if (d.r14 !== null && d.r14 > 72) risks.push(`RSI ${round(d.r14,1)} อยู่ในโซน overbought — เสี่ยงย่อตัว`);
-  if (d.r14 !== null && d.r14 < 28) risks.push(`RSI ${round(d.r14,1)} อยู่ในโซน oversold — อาจเด้งแต่เทรนด์อาจยังเป็นขาลง`);
-  if (d.atrPct !== null) risks.push(`ATR ${round(d.atrPct*100,1)}% ของราคา — ความผันผวน${d.atrPct > 0.05 ? 'สูง' : d.atrPct > 0.025 ? 'ปานกลาง' : 'ต่ำ'}`);
-  if (d.volMom !== null && d.volMom < -0.25) risks.push('วอลุ่มหดตัวลงชัดเจน — สภาพคล่อง/ความสนใจลดลง');
-  if (d.volMom !== null && d.volMom > 0.6) risks.push('วอลุ่มพุ่งผิดปกติ — ระวังการเก็งกำไรระยะสั้น');
-  if (risks.length === 0) risks.push('ไม่พบสัญญาณเสี่ยงชัดเจนจากอินดิเคเตอร์');
-  L.push(risks.join(' • '));
+  L.push('**📈 สัญญาณอินดิเคเตอร์**');
+  const indNotes = [];
+  if (d.r14 !== null){
+    if (d.r14 >= 30 && d.r14 <= 50) indNotes.push(`RSI (${round(d.r14,1)}) อยู่ใน Sweet Spot สะสมพลัง`);
+    else if (d.r14 < 30) indNotes.push(`RSI (${round(d.r14,1)}) อยู่ในโซน Oversold จ่อเด้งรีบาวด์`);
+    else if (d.r14 > 70) indNotes.push(`RSI (${round(d.r14,1)}) Overbought ร้อนแรงเกินไป`);
+  }
+  if (d.isSqueeze) indNotes.push('Bollinger Bands บีบตัวแคบ (Squeeze) เตรียมพร้อมสำหรับการระเบิดความผันผวน');
+  if (d.crossBull) indNotes.push('MACD เพิ่งเกิด Bullish Golden Cross!');
+  else if (d.macdHistNow > 0) indNotes.push('MACD อยู่แดนบวก โมเมนตัมเป็นใจ');
+  else if (d.macdHistNow > d.macdHistPrev) indNotes.push('MACD แดนลบแต่แรงขายหดตัวชัดเจน (กำลังวกขึ้น)');
+  L.push(indNotes.join(' • ') || 'อินดิเคเตอร์ทรงตัวในระดับปกติ');
 
-  L.push('**💡 กลยุทธ์**');
-  if (score.total >= 75) L.push('แนวทางมืออาชีพ: แบ่งไม้เข้าซื้อ 50% ที่ราคาปัจจุบัน เก็บอีก 50% รอจังหวะย่อเข้า SMA20 หรือแนวรับ Bollinger ตั้ง stop loss ต่ำกว่าแนวรับราว 1–1.5 เท่าของ ATR');
-  else if (score.total >= 62) L.push('แนวทางมืออาชีพ: สะสมเป็นงวด (DCA) หลีกเลี่ยงทุ่มซื้อทีเดียว ตั้ง stop loss ชัดเจน และรอการยืนยันจากวอลุ่มก่อนเพิ่มไม้');
-  else if (score.total >= 48) L.push('แนวทางมืออาชีพ: รอจังหวะ — รอดูการ breakout จากกรอบ Bollinger หรือการตัดขึ้นของ MACD ก่อนตัดสินใจ ไม่ไล่ราคา');
-  else if (score.total >= 35) L.push('แนวทางมืออาชีพ: ลดสัดส่วนการถือครอง ใช้การเด้งตัวเพื่อขายบางส่วน ยังไม่ใช่จังหวะเข้าซื้อ');
-  else L.push('แนวทางมืออาชีพ: หลีกเลี่ยง/ชะลอการเข้าซื้อ มุ่งเน้นรักษาเงินต้น กลับมาดูใหม่เมื่อเทรนด์ฟื้นตัว');
+  // Trade levels
+  const lastPrice = coin.current_price;
+  const lowBB = (d.bb && d.bb.low[d.bb.low.length-1]) || lastPrice * 0.96;
+  const upBB = (d.bb && d.bb.up[d.bb.up.length-1]) || lastPrice * 1.08;
+  const atrVal = d.a || (lastPrice * 0.03);
+  const sl = Math.max(0, lowBB - (atrVal * 0.5));
+  const tp1 = lastPrice + ((lastPrice - sl) * 1.6);
+  const tp2 = Math.max(upBB, lastPrice + ((lastPrice - sl) * 2.8));
 
-  L.push('**🏁 สรุป**');
-  L.push(`${sig.t} — คะแนน ${score.total}/100 การจัดพอร์ตตามหลักมืออาชีพควรจำกัดสัดส่วนเหรียญเดี่ยว และถือเงินสดสำรองไว้เสมอ`);
+  L.push('**🎯 กรอบราคาปฏิบัติการเชิงกลยุทธ์**');
+  L.push(`- **โซนเข้าสะสม:** ${fmtPrice(lastPrice*0.985, rate)} – ${fmtPrice(lastPrice*1.01, rate)} ${cur}`);
+  L.push(`- **จุด Stop Loss:** ${fmtPrice(sl, rate)} ${cur} (ต่ำกว่าแนวรับ Bollinger ล่าง -0.5 ATR)`);
+  L.push(`- **เป้าหมาย Take Profit 1:** ${fmtPrice(tp1, rate)} ${cur} (R:R ~1:1.6)`);
+  L.push(`- **เป้าหมาย Take Profit 2:** ${fmtPrice(tp2, rate)} ${cur} (R:R ~1:2.8)`);
+
+  L.push('**💡 กลยุทธ์การลงทุน**');
+  if (earlyScore >= 75){
+    L.push('แบ่งไม้สะสม 40% ที่ราคาปัจจุบัน และตั้งรับอีก 60% ที่บริเวณโซนแนวรับ Stop loss ชัดเจน');
+  } else if (coin.price_change_percentage_24h > 12 || (d.r14 && d.r14 > 70)){
+    L.push('หลีกเลี่ยงการทุ่มซื้อไม้เดียว รอให้ราคาย่อตัวลงมาแตะเส้น SMA20 หรือแนวรับก่อนจึงพิจารณา');
+  } else {
+    L.push('ทยอยสะสมแบบ Dollar-Cost Averaging (DCA) และรอสัญญาณเบรกกรอบ Bollinger ชัดเจน');
+  }
+
   return L.join('\n');
 }
 
 /* ==================================================
-   ตัวเลข → UI
+   UI Rendering
    ================================================== */
-function coinCur(c){ return c.current_price * state.rate; }
 function curSym(){ return CUR[state.currency].sym; }
 
 function renderOverview(){
@@ -1041,14 +1400,12 @@ function renderOverview(){
   const ethD = g.market_cap_percentage && g.market_cap_percentage.eth;
   const chg = g.market_cap_change_percentage_24h_usd ?? 0;
 
-  // ดัชนีความเชื่อมั่นจาก Top 50 (คำนวณเอง)
-  let breadth = 0, avgChg = 0, sumVol = 0;
+  let breadth = 0, avgChg = 0;
   if (state.markets.length){
     for (const c of state.markets){
       const ch = c.price_change_percentage_24h ?? 0;
       if (ch > 0) breadth++;
       avgChg += ch;
-      sumVol += (c.total_volume || 0);
     }
     breadth = breadth/state.markets.length*100;
     avgChg = avgChg/state.markets.length;
@@ -1062,16 +1419,77 @@ function renderOverview(){
       <div class="d ${pctCls(chg)}">${pctTxt(chg)} (24ชม.)</div></div>
     <div class="ov-card"><div class="t">วอลุ่ม 24 ชม. รวม</div>
       <div class="v">${vol === null ? '—' : sym + fmtNum(vol)}</div>
-      <div class="d flat">ตลาดทั้งหมด</div></div>
+      <div class="d flat">ตลาดคริปโตทั้งหมด</div></div>
     <div class="ov-card"><div class="t">Dominance</div>
       <div class="v">BTC ${btcD ? round(btcD,1) : '—'}%</div>
       <div class="d flat">ETH ${ethD ? round(ethD,1) : '—'}%</div></div>
     <div class="ov-card"><div class="t">ความเชื่อมั่นตลาด (Top 50)</div>
       <div class="v" style="color:${colorForScore(senti)}">${senti}/100</div>
-      <div class="d flat">${sentiTxt} • ขาขึ้น ${Math.round(breadth)}% ของเหรียญ</div></div>`;
+      <div class="d flat">${sentiTxt} • ขาขึ้น ${Math.round(breadth)}%</div></div>`;
 }
 
-function sparkSVG(prices, color){
+/* ---- Render Hero Spotlight (Top 3 Early Buy Picks) ---- */
+function renderSpotlight(){
+  const grid = $('#spotlight-grid');
+  if (!state.markets.length){
+    grid.innerHTML = '<div class="spot-card"><span class="hint">กำลังคำนวณสัญญาณเรดาร์...</span></div>';
+    return;
+  }
+
+  // Filter out stablecoins, already pumped coins, and sort by early score
+  const nonStables = state.markets.filter(c => !c._isStable && (c.price_change_percentage_24h ?? 0) <= 15);
+  const earlyCandidates = nonStables.slice().sort((a,b) => (b._earlyScore || 0) - (a._earlyScore || 0));
+  const topPicks = earlyCandidates.slice(0, 3);
+
+  if (!topPicks.length){
+    grid.innerHTML = '<div class="spot-card"><span class="hint">ไม่พบเหรียญที่ตรงเงื่อนไขต้นน้ำในขณะนี้</span></div>';
+    return;
+  }
+
+  const rate = state.rate, sym = curSym();
+  grid.innerHTML = topPicks.map((c, idx) => {
+    const an = c._analysis;
+    const score = c._earlyScore || 0;
+    const col = colorForScore(score);
+    const c24 = c.price_change_percentage_24h ?? 0;
+    const c7  = c.price_change_percentage_7d_in_currency ?? 0;
+
+    const tagBadges = (an && an.tags) ? an.tags.slice(0, 3).map(t =>
+      `<span class="badge ${t.cls || 'early-tag'}">${t.icon} ${esc(t.text)}</span>`
+    ).join('') : '';
+
+    return `
+      <div class="spot-card ${idx===0?'top1':''}" data-id="${esc(c.id)}">
+        <div class="spot-top">
+          <img class="spot-img" src="${esc(c.image)}" alt="" loading="lazy">
+          <div class="spot-info">
+            <div class="spot-nm">${esc(c.name)} <span class="badge ${score>=80?'early-tag':'squeeze-tag'}">#${idx+1} ต้นน้ำ</span></div>
+            <div class="spot-sy">${esc(c.symbol.toUpperCase())} • Market Cap #${c.market_cap_rank}</div>
+          </div>
+          <div class="spot-score-box">
+            <div class="spot-score-val" style="color:${col}">${score}</div>
+            <div class="spot-score-lbl">คะแนนต้นน้ำ</div>
+          </div>
+        </div>
+
+        <div class="spot-price-row">
+          <div>ราคา: <b>${fmtPrice(c.current_price, rate)} ${sym}</b></div>
+          <div>
+            <span class="${pctCls(c24)}" style="font-weight:700">${pctTxt(c24)} (24ชม.)</span> •
+            <span class="${pctCls(c7)}" style="font-size:11.5px">${pctTxt(c7)} (7วัน)</span>
+          </div>
+        </div>
+
+        <div class="spot-tags">${tagBadges}</div>
+
+        <div class="spot-desc">${esc(an ? an.summary : 'สัญญาณสะสมพลังน่าจับตา')}</div>
+
+        <button class="btn early spot-btn" onclick="openDrawer('${esc(c.id)}')">⚡ วิเคราะห์จุดเข้า &amp; Stop Loss</button>
+      </div>`;
+  }).join('');
+}
+
+function sparkSVG(prices){
   if (!prices || prices.length < 2) return '<span style="color:var(--tx3)">—</span>';
   const min = Math.min(...prices), max = Math.max(...prices);
   const range = (max-min) || 1;
@@ -1088,43 +1506,120 @@ function sparkSVG(prices, color){
     + '<polyline points="' + pts + '" fill="none" stroke="' + c + '" stroke-width="1.4"/></svg>';
 }
 
+function updateCounts(){
+  const all = state.markets;
+  let cEarly = 0, cSqueeze = 0, cReversal = 0, cOversold = 0, cMom = 0;
+  all.forEach(c => {
+    if (c._isStable) return;
+    if (c._earlyScore >= 70) cEarly++;
+    if (c._analysis && c._analysis.isSqueeze) cSqueeze++;
+    if (c._analysis && (c._analysis.isMacdGoldenCross || c._analysis.isMacdHistTurningUp)) cReversal++;
+    if (c._analysis && c._analysis.rsi <= 42) cOversold++;
+    if ((c.price_change_percentage_24h ?? 0) > 4 || (c.price_change_percentage_7d_in_currency ?? 0) > 15) cMom++;
+  });
+  $('#cnt-early').textContent = cEarly;
+  $('#cnt-all').textContent = all.length;
+  $('#cnt-squeeze').textContent = cSqueeze;
+  $('#cnt-reversal').textContent = cReversal;
+  $('#cnt-oversold').textContent = cOversold;
+  $('#cnt-momentum').textContent = cMom;
+}
+
 function renderTable(){
   const tb = $('#tbody');
-  let list = state.markets.filter(c =>
-    !state.search ||
-    c.name.toLowerCase().includes(state.search) ||
-    c.symbol.toLowerCase().includes(state.search)
-  );
+  let list = state.markets.filter(c => {
+    if (state.search){
+      const q = state.search;
+      if (!c.name.toLowerCase().includes(q) && !c.symbol.toLowerCase().includes(q)) return false;
+    }
+    // Filter toggles
+    if (state.filterHideStable && c._isStable) return false;
+    if (state.filterHidePumped && (c.price_change_percentage_24h > 12 || c.price_change_percentage_7d_in_currency > 35)) return false;
+    if (state.filterOnlyHighScore && (c._earlyScore || 0) < 70) return false;
+
+    // Mode filters
+    if (state.mode === 'early') return (c._earlyScore || 0) >= 60;
+    if (state.mode === 'squeeze') return c._analysis && c._analysis.isSqueeze;
+    if (state.mode === 'reversal') return c._analysis && (c._analysis.isMacdGoldenCross || c._analysis.isMacdHistTurningUp);
+    if (state.mode === 'oversold') return c._analysis && c._analysis.rsi <= 44;
+    if (state.mode === 'momentum') return (c.price_change_percentage_24h ?? 0) > 3 || (c.price_change_percentage_7d_in_currency ?? 0) > 12;
+    return true;
+  });
+
   const k = state.sort.k, dir = state.sort.dir;
   list = list.slice().sort((a,b) => {
     if (k === 'rank') return (a.market_cap_rank - b.market_cap_rank) * dir;
     if (k === 'name') return a.name.localeCompare(b.name) * dir;
-    if (k === 'vol') return ((a.total_volume/(a.market_cap||1)) - (b.total_volume/(b.market_cap||1))) * dir;
-    if (k === 'score') return (quickScore(a) - quickScore(b)) * dir;
+    if (k === 'price') return (a.current_price - b.current_price) * dir;
+    if (k === 'c24') return ((a.price_change_percentage_24h||0) - (b.price_change_percentage_24h||0)) * dir;
+    if (k === 'c7') return ((a.price_change_percentage_7d_in_currency||0) - (b.price_change_percentage_7d_in_currency||0)) * dir;
+    if (k === 'c30') return ((a.price_change_percentage_30d_in_currency||0) - (b.price_change_percentage_30d_in_currency||0)) * dir;
+    if (k === 'rsi') return (((a._analysis&&a._analysis.rsi)||50) - ((b._analysis&&b._analysis.rsi)||50)) * dir;
+    if (k === 'earlyScore') return ((a._earlyScore||0) - (b._earlyScore||0)) * dir;
+    if (k === 'score') return ((a._quickScore||0) - (b._quickScore||0)) * dir;
     return ((a[k] ?? 0) - (b[k] ?? 0)) * dir;
   });
+
   const rate = state.rate, sym = curSym();
   tb.innerHTML = list.map(c => {
-    const s = quickScore(c);
-    const col = colorForScore(s);
+    const an = c._analysis;
+    const eScore = c._earlyScore || 0;
+    const qScore = c._quickScore || 0;
+    const eCol = colorForScore(eScore);
+    const qCol = colorForScore(qScore);
     const ch24 = c.price_change_percentage_24h ?? 0;
-    return `<tr data-id="${esc(c.id)}">
+    const ch7  = c.price_change_percentage_7d_in_currency ?? 0;
+    const ch30 = c.price_change_percentage_30d_in_currency ?? 0;
+
+    const rsiVal = an ? an.rsi : '—';
+    let rsiCls = 'rsi-neutral';
+    if (an){
+      if (an.rsi >= 30 && an.rsi <= 50) rsiCls = 'rsi-sweet';
+      else if (an.rsi < 30) rsiCls = 'rsi-oversold';
+      else if (an.rsi > 68) rsiCls = 'rsi-overbought';
+    }
+
+    const tagBadges = (an && an.tags) ? an.tags.slice(0, 2).map(t =>
+      `<span class="badge ${t.cls || 'early-tag'}" title="${esc(t.text)}">${t.icon} ${esc(t.text.split(' ')[0])}</span>`
+    ).join('') : '';
+
+    const isHighEarly = eScore >= 75;
+
+    return `<tr data-id="${esc(c.id)}" class="${isHighEarly?'highlight-early':''}">
       <td class="rank-no">${c.market_cap_rank}</td>
-      <td><div class="coin-cell"><img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-        <div><div class="nm">${esc(c.name)}</div><div class="sy">${esc(c.symbol.toUpperCase())}</div></div></div></td>
-      <td>${fmtPrice(c.current_price, rate)} ${sym}</td>
-      <td class="${pctCls(ch24)}">${pctTxt(ch24)}</td>
-      <td class="${pctCls(c.price_change_percentage_7d_in_currency ?? 0)}">${pctTxt(c.price_change_percentage_7d_in_currency ?? 0)}</td>
-      <td class="${pctCls(c.price_change_percentage_30d_in_currency ?? 0)}">${pctTxt(c.price_change_percentage_30d_in_currency ?? 0)}</td>
-      <td class="flat">${round((c.total_volume/(c.market_cap||1))*100,1)}%</td>
+      <td>
+        <div class="coin-cell">
+          <img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+          <div>
+            <div class="nm">${esc(c.name)}</div>
+            <div class="sy">${esc(c.symbol.toUpperCase())}</div>
+          </div>
+        </div>
+      </td>
+      <td><b>${fmtPrice(c.current_price, rate)} ${sym}</b></td>
+      <td class="${pctCls(ch24)}"><b>${pctTxt(ch24)}</b></td>
+      <td class="${pctCls(ch7)}">${pctTxt(ch7)}</td>
+      <td class="${pctCls(ch30)}">${pctTxt(ch30)}</td>
+      <td><span class="rsi-pill ${rsiCls}">${rsiVal}</span></td>
+      <td><div class="sig-cell">${tagBadges}</div></td>
       <td>${sparkSVG(c.sparkline_in_7d && c.sparkline_in_7d.price)}</td>
-      <td><span class="score-chip"><span class="sc" style="color:${col}">${s}</span>
-        <span class="gr">${gradeFor(s)}</span></span></td>
+      <td>
+        <div class="early-chip">
+          <span class="sc" style="color:${eCol}">${eScore} <span style="font-size:10.5px;color:var(--tx3)">(${gradeFor(eScore)})</span></span>
+          <span class="bar-box"><i style="width:${eScore}%;background:${eCol}"></i></span>
+        </div>
+      </td>
+      <td>
+        <span class="score-chip">
+          <span class="sc" style="color:${qCol}">${qScore}</span>
+          <span class="gr">${gradeFor(qScore)}</span>
+        </span>
+      </td>
     </tr>`;
-  }).join('') || '<tr class="loading-row"><td colspan="9">ไม่พบเหรียญที่ค้นหา</td></tr>';
+  }).join('') || '<tr class="loading-row"><td colspan="11">ไม่พบเหรียญที่ตรงตามเงื่อนไขตัวกรอง</td></tr>';
 }
 
-/* ---------------- drawer ---------------- */
+/* ---------------- Drawer ---------------- */
 function openDrawer(coinId){
   const coin = state.markets.find(c => c.id === coinId);
   if (!coin) return;
@@ -1163,7 +1658,7 @@ async function loadDetail(){
   try {
     const ohlc = await loadOHLC(coin.id);
     if (!ohlc){
-      $('#ring-area').innerHTML = '<span class="hint">⚠️ ข้อมูลกราฟไม่เพียงพอสำหรับเหรียญนี้ (เหรียญใหม่?)</span>';
+      $('#ring-area').innerHTML = '<span class="hint">⚠️ ข้อมูลกราฟไม่เพียงพอสำหรับเหรียญนี้</span>';
       return;
     }
     const d = analyze(ohlc);
@@ -1171,7 +1666,7 @@ async function loadDetail(){
     state.detailData = { d, score };
     renderScore(coin, d, score);
   } catch(e){
-    $('#ring-area').innerHTML = '<span class="hint">⚠️ โหลดข้อมูลไม่สำเร็จ (อาจติด rate limit ของ CoinGecko) — ลองใหม่ใน 1-2 นาที</span>';
+    $('#ring-area').innerHTML = '<span class="hint">⚠️ โหลดข้อมูลไม่สำเร็จ (อาจติด rate limit ของ CoinGecko) — ลองใหม่ใน 1 นาที</span>';
   }
 }
 
@@ -1180,11 +1675,73 @@ function renderScore(coin, d, score){
   const col = colorForScore(score.total);
   const sig = signalFor(score.total);
   const g = gradeFor(score.total);
+  const an = coin._analysis;
+  const earlyScore = an ? an.earlyBuyScore : 50;
+  const earlyCol = colorForScore(earlyScore);
 
+  // Early Buy Box inside Drawer
+  $('#dr-early-score-text').innerHTML = `<span style="color:${earlyCol}">${earlyScore} / 100 คะแนน</span>`;
+
+  const checks = [];
+  // 1. Price Unpumped
+  const c24 = coin.price_change_percentage_24h ?? 0;
+  const c7  = coin.price_change_percentage_7d_in_currency ?? 0;
+  if (c24 <= 6 && c7 <= 15){
+    checks.push(`<div class="dr-check-item pass"><span class="ci-icon">✅</span><div class="ci-text"><strong>ราคาไม่ไล่ยอดดอย:</strong> 24ชม. ${pctTxt(c24)}, 7วัน ${pctTxt(c7)} (อยู่ในกรอบสะสม)</div></div>`);
+  } else {
+    checks.push(`<div class="dr-check-item warn"><span class="ci-icon">⚠️</span><div class="ci-text"><strong>ราคาเริ่มวิ่งแรง:</strong> 24ชม. ${pctTxt(c24)}, 7วัน ${pctTxt(c7)} (ระวังการไล่ราคา)</div></div>`);
+  }
+
+  // 2. RSI Sweet Spot
+  if (d.r14 !== null){
+    if (d.r14 >= 30 && d.r14 <= 52){
+      checks.push(`<div class="dr-check-item pass"><span class="ci-icon">✅</span><div class="ci-text"><strong>RSI โซนสะสม (Sweet Spot):</strong> ${round(d.r14,1)} (ไม่อยู่ในโซน Overbought)</div></div>`);
+    } else if (d.r14 < 30){
+      checks.push(`<div class="dr-check-item pass"><span class="ci-icon">🎯</span><div class="ci-text"><strong>RSI Oversold โซนลึก:</strong> ${round(d.r14,1)} (โอกาสเกิด Technical Rebound)</div></div>`);
+    } else {
+      checks.push(`<div class="dr-check-item fail"><span class="ci-icon">❌</span><div class="ci-text"><strong>RSI Overbought (${round(d.r14,1)}):</strong> เสี่ยงต่อแรงขายทำกำไร</div></div>`);
+    }
+  }
+
+  // 3. MACD Momentum
+  if (d.crossBull || (d.macdHistNow > 0 && d.macdHistNow > d.macdHistPrev)){
+    checks.push(`<div class="dr-check-item pass"><span class="ci-icon">✅</span><div class="ci-text"><strong>MACD โมเมนตัมบวก:</strong> สัญญาณซื้อและกำลังเร่งตัวขึ้น</div></div>`);
+  } else if (d.macdHistNow < 0 && d.macdHistNow > d.macdHistPrev){
+    checks.push(`<div class="dr-check-item pass"><span class="ci-icon">🔄</span><div class="ci-text"><strong>MACD กำลังกลับตัว:</strong> แรงขายหดตัวชัดเจน จ่อตัดขึ้น</div></div>`);
+  } else {
+    checks.push(`<div class="dr-check-item warn"><span class="ci-icon">🟡</span><div class="ci-text"><strong>MACD โมเมนตัมลบ:</strong> ยังรอจังหวะวกตัวขึ้นชัดเจน</div></div>`);
+  }
+
+  // 4. Bollinger Squeeze
+  if (d.isSqueeze){
+    checks.push(`<div class="dr-check-item pass"><span class="ci-icon">🗜️</span><div class="ci-text"><strong>Bollinger Squeeze:</strong> กรอบความผันผวนบีบตัวแคบ จ่อระเบิดทิศทางใหม่</div></div>`);
+  } else {
+    checks.push(`<div class="dr-check-item"><span class="ci-icon">📊</span><div class="ci-text"><strong>Bollinger Bands:</strong> %B = ${d.pctB !== null ? round(d.pctB,2) : '—'} (กรอบความผันผวนปกติ)</div></div>`);
+  }
+
+  $('#dr-checklist').innerHTML = checks.join('');
+
+  // Levels
+  const lastPrice = coin.current_price;
+  const lowBB = (d.bb && d.bb.low[d.bb.low.length-1]) || lastPrice * 0.96;
+  const upBB = (d.bb && d.bb.up[d.bb.up.length-1]) || lastPrice * 1.08;
+  const atrVal = d.a || (lastPrice * 0.03);
+  const sl = Math.max(0, lowBB - (atrVal * 0.5));
+  const tp1 = lastPrice + ((lastPrice - sl) * 1.6);
+  const tp2 = Math.max(upBB, lastPrice + ((lastPrice - sl) * 2.8));
+  const rr = ((tp1 - lastPrice) / Math.max(1e-6, lastPrice - sl)).toFixed(1);
+
+  $('#dr-levels-grid').innerHTML = `
+    <div class="level-card"><div class="lt">โซนเข้าสะสม</div><div class="lv" style="color:var(--ok)">${fmtPrice(lastPrice*0.99, rate)} ${sym}</div></div>
+    <div class="level-card"><div class="lt">จุดตัดขาดทุน (SL)</div><div class="lv" style="color:var(--bad)">${fmtPrice(sl, rate)} ${sym}</div></div>
+    <div class="level-card"><div class="lt">เป้าทำกำไร (TP1)</div><div class="lv" style="color:var(--acc2)">${fmtPrice(tp1, rate)} ${sym}</div></div>
+    <div class="level-card"><div class="lt">Risk/Reward</div><div class="lv" style="color:var(--warn)">1 : ${rr}</div></div>`;
+
+  // Ring Area (Full Technical Score)
   $('#ring-area').innerHTML = `
-    <div class="ring" style="background:conic-gradient(${col} ${score.total*3.6}deg, #12203a 0deg)">
+    <div class="ring" style="background:conic-gradient(${col} ${score.total*3.6}deg, #101c34 0deg)">
       <div class="in"><div class="num" style="color:${col}">${score.total}</div>
-      <div class="lbl">/ 100 คะแนน</div></div>
+      <div class="lbl">/ 100 คะแนนเต็ม</div></div>
     </div>
     <div class="ring-head">
       <div class="grd" style="color:${col}">เกรด ${g}</div>
@@ -1204,25 +1761,23 @@ function renderScore(coin, d, score){
   const chip = (t, v, s) => chips.push(
     `<div class="ind-chip"><div class="t">${t}</div><div class="v">${v}</div>${s ? '<div class="s">' + s + '</div>' : ''}</div>`);
   chip('RSI (14)', d.r14 === null ? '—' : round(d.r14,1),
-    d.r14 === null ? '' : d.r14 > 70 ? '<span style="color:var(--bad)">Overbought</span>' : d.r14 < 30 ? '<span style="color:var(--warn)">Oversold</span>' : '<span style="color:var(--tx3)">ปกติ</span>');
+    d.r14 === null ? '' : d.r14 > 70 ? '<span style="color:var(--bad)">Overbought</span>' : d.r14 < 30 ? '<span style="color:var(--warn)">Oversold</span>' : '<span style="color:var(--ok)">โซนสะสม</span>');
   chip('MACD Hist', d.macdHistNow === null ? '—' : round(d.macdHistNow, 6),
-    d.macdHistNow === null ? '' : d.macdHistNow >= 0 ? '<span style="color:var(--ok)">บวก</span>' : '<span style="color:var(--bad)">ลบ</span>');
+    d.macdHistNow === null ? '' : d.macdHistNow >= 0 ? '<span style="color:var(--ok)">บวก ▲</span>' : '<span style="color:var(--bad)">ลบ ▼</span>');
   chip('SMA20', fmtPrice(d.sma20[d.sma20.length-1], rate),
     d.price >= d.sma20[d.sma20.length-1] ? '<span style="color:var(--ok)">เหนือเส้น ▲</span>' : '<span style="color:var(--bad)">ใต้เส้น ▼</span>');
   chip('SMA50', fmtPrice(d.sma50[d.sma50.length-1], rate),
-    d.sma20[d.sma20.length-1] >= d.sma50[d.sma50.length-1] ? '<span style="color:var(--ok)">Golden Zone ▲</span>' : '<span style="color:var(--bad)">Dead Zone ▼</span>');
-  chip('%B', d.pctB === null ? '—' : round(d.pctB,2), '');
+    d.sma20[d.sma20.length-1] >= d.sma50[d.sma50.length-1] ? '<span style="color:var(--ok)">Golden Zone</span>' : '<span style="color:var(--bad)">Dead Zone</span>');
+  chip('Bollinger Squeeze', d.isSqueeze ? '🗜️ บีบตัวแคบ' : 'ปกติ', d.isSqueeze ? '<span style="color:var(--acc2)">จ่อเบรกเอาท์</span>' : '');
   chip('ATR (14)', d.atrPct === null ? '—' : round(d.atrPct*100,1) + '%', 'ความผันผวน/แท่ง');
   chip('ROC (10)', d.roc10 === null ? '—' : pctTxt(d.roc10), '');
-  chip('Vol Momentum', d.volMom === null ? '—' : pctTxt(d.volMom*100), '');
-  chip('ตำแหน่งช่วง 30 วัน', Math.round(d.nearHigh*100) + '%', 'จาก Low → High');
+  chip('ตำแหน่ง 30 วัน', Math.round(d.nearHigh*100) + '%', 'จาก Low → High');
   $('#grid-ind').innerHTML = chips.join('');
 
   drawPriceChart(d);
   drawOscChart('cv-rsi', { vals: d.rsiArr, type:'rsi', time: d.t });
   drawOscChart('cv-macd', { hist: d.macdHist, line: d.macdLine, sig: d.macdSig, type:'macd', time: d.t });
 
-  // บทวิเคราะห์
   $('#rule-out').innerHTML = renderMD(ruleAnalysis(coin, d, score));
   renderAIPanel(coin, d, score);
 }
@@ -1234,17 +1789,17 @@ function renderAIPanel(coin, d, score){
   const provName = PROVIDERS[state.ai.provider] ? PROVIDERS[state.ai.provider].name : 'กำหนดเอง';
   box.innerHTML = `
     <p class="hint" style="margin:0 0 10px">${free ? 'โหมด AI ฟรี' : 'โหมดคีย์ของคุณเอง'} — ${esc(provName)} • โมเดล ${esc(state.ai.model)} • คงเหลือ ${left} ครั้ง/ชม. ${free ? '• ' + AI_TIP : ''}</p>
-    <button class="btn primary" id="ai-run" ${left <= 0 || !httpsOK() ? 'disabled' : ''}>🧠 วิเคราะห์ด้วย AI (มุมมองนักลงทุนอาชีพ)</button>
+    <button class="btn early" id="ai-run" ${left <= 0 || !httpsOK() ? 'disabled' : ''}>🧠 วิเคราะห์กลยุทธ์ต้นน้ำด้วย AI (มุมมองนักลงทุนอาชีพ)</button>
     <button class="btn small" id="ai-go-settings" style="margin-left:6px">⚙️ ตั้งค่า AI</button>`;
   $('#ai-out').classList.add('hidden');
   const gs = $('#ai-go-settings'); if (gs) gs.onclick = () => openSettings();
   $('#ai-run').onclick = async () => {
     const btn = $('#ai-run');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> AI กำลังวิเคราะห์... (อาจใช้เวลา 10–60 วิ)';
+    btn.innerHTML = '<span class="spinner"></span> AI กำลังวิเคราะห์จุดเข้า & SL... (10–60 วิ)';
     try {
       const txt = await callAI([
-        { role:'system', content:'คุณคือนักวิเคราะห์คริปโตมืออาชีพ ตอบเป็นภาษาไทย ใช้ markdown ตามหัวข้อที่กำหนด ห้ามอ้างตัวเลขที่ไม่ได้ให้มา' },
+        { role:'system', content:'คุณคือนักวิเคราะห์คริปโตและผู้จัดการกองทุนมืออาชีพ ตอบเป็นภาษาไทย ใช้ Markdown ตามหัวข้อที่กำหนด เน้นประเมินจุดเข้าซื้อต้นน้ำที่ได้เปรียบ และเตือนไม่ให้ไล่ราคา' },
         { role:'user', content: buildAIPrompt(coin, d, score) }
       ]);
       const out = $('#ai-out');
@@ -1257,12 +1812,12 @@ function renderAIPanel(coin, d, score){
       out.classList.remove('hidden');
     } finally {
       btn.disabled = false;
-      btn.innerHTML = '🧠 วิเคราะห์ด้วย AI (มุมมองนักลงทุนอาชีพ)';
+      btn.innerHTML = '🧠 วิเคราะห์กลยุทธ์ต้นน้ำด้วย AI (มุมมองนักลงทุนอาชีพ)';
     }
   };
 }
 
-/* ---------------- charts (canvas ล้วน ไม่มี lib) ---------------- */
+/* ---------------- Charts (Canvas ล้วน) ---------------- */
 function setupCanvas(cv){
   const dpr = window.devicePixelRatio || 1;
   const w = cv.clientWidth || 600, h = cv.clientHeight || 220;
@@ -1296,28 +1851,27 @@ function drawPriceChart(d){
   const X = i => L + (i/(n-1))*(w-L-R);
   const Y = v => T + (1 - (v-mn)/(mx-mn))*(priceH-T-8);
 
-  // grid + labels
   ctx.font = '10px sans-serif';
   for (let g = 0; g <= 4; g++){
     const v = mx - (mx-mn)*g/4;
     const y = Y(v);
     ctx.strokeStyle = 'rgba(90,120,180,.14)'; ctx.beginPath();
     ctx.moveTo(L, y); ctx.lineTo(w-R, y); ctx.stroke();
-    ctx.fillStyle = '#5b6f96'; ctx.textAlign = 'right';
+    ctx.fillStyle = '#6278a3'; ctx.textAlign = 'right';
     ctx.fillText(fmtPrice(v, rate), L-6, y+3);
   }
   for (const f of [0, 0.5, 1]){
     const i = Math.round((n-1)*f);
-    ctx.fillStyle = '#5b6f96'; ctx.textAlign = f === 0 ? 'left' : f === 1 ? 'right' : 'center';
+    ctx.fillStyle = '#6278a3'; ctx.textAlign = f === 0 ? 'left' : f === 1 ? 'right' : 'center';
     ctx.fillText(fmtDate(d.t[i]), X(i), h-6);
   }
 
-  // Bollinger fill
+  // Bollinger Bands fill
   ctx.beginPath();
   for (let i = 20; i < n; i++){ const x = X(i), y = Y(d.bb.up[i]); i === 20 ? ctx.moveTo(x,y) : ctx.lineTo(x,y); }
   for (let i = n-1; i >= 20; i--){ ctx.lineTo(X(i), Y(d.bb.low[i])); }
   ctx.closePath();
-  ctx.fillStyle = 'rgba(79,124,255,.07)'; ctx.fill();
+  ctx.fillStyle = 'rgba(34,211,238,.06)'; ctx.fill();
 
   const line = (arr, color, width) => {
     ctx.beginPath(); let started = false;
@@ -1329,13 +1883,13 @@ function drawPriceChart(d){
     }
     ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
   };
-  line(d.bb.up, 'rgba(150,170,220,.45)', 1);
-  line(d.bb.low, 'rgba(150,170,220,.45)', 1);
+  line(d.bb.up, 'rgba(150,170,220,.4)', 1);
+  line(d.bb.low, 'rgba(150,170,220,.4)', 1);
   line(d.sma20, '#f5b63f', 1.3);
   line(d.sma50, '#c084fc', 1.3);
-  line(d.close, d.close[n-1] >= d.close[Math.max(0,n-40)] ? '#2dd4a7' : '#f4576e', 1.8);
+  line(d.close, d.close[n-1] >= d.close[Math.max(0,n-40)] ? '#2dd4a7' : '#f4576e', 2);
 
-  // volume
+  // volume bars
   const vmx = Math.max(...d.vol.slice(-180)) || 1;
   for (let i = Math.max(0, n-180); i < n; i++){
     const x = X(i), vh = Math.max(1, (d.vol[i]/vmx)*volH);
@@ -1347,136 +1901,135 @@ function drawPriceChart(d){
     '<span><i style="background:#2dd4a7"></i>ราคา</span>'
     + '<span><i style="background:#f5b63f"></i>SMA20</span>'
     + '<span><i style="background:#c084fc"></i>SMA50</span>'
-    + '<span><i style="background:rgba(150,170,220,.45)"></i>Bollinger (2σ)</span>';
+    + '<span><i style="background:rgba(150,170,220,.45)"></i>Bollinger Bands</span>';
 }
 
-function drawOscChart(id, o){
-  const cv = $('#' + id); if (!cv) return;
+function drawOscChart(canvasId, opt){
+  const cv = $('#' + canvasId); if (!cv) return;
   const { ctx, w, h } = setupCanvas(cv);
-  const L = 42, R = 10, T = 8, B = 18;
-  const n = o.vals ? o.vals.length : o.hist.length;
+  const L = 62, R = 14, T = 8, B = 18;
+  const n = (opt.vals || opt.line || opt.hist).length;
   const X = i => L + (i/(n-1))*(w-L-R);
 
-  ctx.font = '10px sans-serif';
-  if (o.type === 'rsi'){
-    const Y = v => T + (1-v/100)*(h-T-B);
-    for (const lv of [30, 70]){
+  if (opt.type === 'rsi'){
+    const Y = v => T + (1 - v/100)*(h-T-B);
+    [30, 50, 70].forEach(lv => {
       const y = Y(lv);
-      ctx.fillStyle = 'rgba(245,182,63,.5)';
-      ctx.fillRect(L, y, w-L-R, 1);
-      ctx.fillStyle = '#5b6f96'; ctx.textAlign = 'right';
-      ctx.fillText(String(lv), L-5, y+3);
-    }
-    ctx.fillStyle = 'rgba(245,182,63,.05)';
-    ctx.fillRect(L, Y(70), w-L-R, Y(30)-Y(70));
-    ctx.beginPath(); let st = false;
+      ctx.strokeStyle = lv === 50 ? 'rgba(90,120,180,.25)' : lv === 70 ? 'rgba(244,87,110,.4)' : 'rgba(45,212,167,.4)';
+      ctx.setLineDash(lv === 50 ? [2,2] : []);
+      ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w-R, y); ctx.stroke();
+      ctx.fillStyle = lv === 70 ? '#f4576e' : lv === 30 ? '#2dd4a7' : '#6278a3';
+      ctx.textAlign = 'right'; ctx.fillText(lv, L-6, y+3);
+    });
+    ctx.setLineDash([]);
+
+    // Sweet spot band fill 30–50
+    ctx.fillStyle = 'rgba(45,212,167,0.06)';
+    ctx.fillRect(L, Y(50), w-L-R, Y(30)-Y(50));
+
+    ctx.beginPath(); let started = false;
     for (let i = 0; i < n; i++){
-      if (o.vals[i] === null){ st = false; continue; }
-      const x = X(i), y = Y(o.vals[i]);
-      st ? ctx.lineTo(x,y) : ctx.moveTo(x,y); st = true;
+      const v = opt.vals[i];
+      if (v === null || v === undefined){ started = false; continue; }
+      const x = X(i), y = Y(v);
+      started ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+      started = true;
     }
     ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 1.6; ctx.stroke();
-    ctx.fillStyle = '#5b6f96'; ctx.textAlign = 'left';
-    ctx.fillText(fmtDate(o.time[0]), L, h-6);
-    ctx.textAlign = 'right'; ctx.fillText(fmtDate(o.time[n-1]), w-R, h-6);
-  } else {
-    let mn = Infinity, mx = -Infinity;
-    for (let i = 0; i < n; i++){
-      for (const v of [o.hist[i], o.line[i], o.sig[i]]){
+  }
+
+  if (opt.type === 'macd'){
+    let mx = -Infinity, mn = Infinity;
+    for (let i = 26; i < n; i++){
+      for (const v of [opt.line[i], opt.sig[i], opt.hist[i]]){
         if (v === null || v === undefined) continue;
-        mn = Math.min(mn, v); mx = Math.max(mx, v);
+        mx = Math.max(mx, v); mn = Math.min(mn, v);
       }
     }
-    if (!isFinite(mn)) return;
-    const pad = (mx-mn)*0.1; mn -= pad; mx += pad;
-    const Y = v => T + (1-(v-mn)/(mx-mn))*(h-T-B);
-    const zero = Y(0);
-    ctx.strokeStyle = 'rgba(90,120,180,.25)';
-    ctx.beginPath(); ctx.moveTo(L, zero); ctx.lineTo(w-R, zero); ctx.stroke();
-    for (let i = 0; i < n; i++){
-      if (o.hist[i] === null) continue;
-      const x = X(i), y = Y(o.hist[i]);
-      const bh = Math.abs(zero - y) || 1;
-      ctx.fillStyle = o.hist[i] >= 0 ? 'rgba(45,212,167,.55)' : 'rgba(244,87,110,.55)';
-      ctx.fillRect(x-0.7, Math.min(y, zero), 1.5, bh);
+    const ext = Math.max(Math.abs(mx), Math.abs(mn)) || 1;
+    const Y = v => T + (1 - (v+ext)/(2*ext))*(h-T-B);
+    const y0 = Y(0);
+
+    ctx.strokeStyle = 'rgba(90,120,180,.3)'; ctx.beginPath();
+    ctx.moveTo(L, y0); ctx.lineTo(w-R, y0); ctx.stroke();
+    ctx.fillStyle = '#6278a3'; ctx.textAlign = 'right'; ctx.fillText('0', L-6, y0+3);
+
+    for (let i = 26; i < n; i++){
+      const hst = opt.hist[i]; if (hst === null) continue;
+      const x = X(i), y = Y(hst);
+      ctx.fillStyle = hst >= 0 ? 'rgba(45,212,167,.65)' : 'rgba(244,87,110,.65)';
+      ctx.fillRect(x-0.7, Math.min(y0, y), 1.4, Math.abs(y0-y) || 1);
     }
-    const line = (arr, color) => {
-      ctx.beginPath(); let st = false;
-      for (let i = 0; i < n; i++){
-        if (arr[i] === null || arr[i] === undefined){ st = false; continue; }
+    const drawLine = (arr, color) => {
+      ctx.beginPath(); let started = false;
+      for (let i = 26; i < n; i++){
+        if (arr[i] === null){ started = false; continue; }
         const x = X(i), y = Y(arr[i]);
-        st ? ctx.lineTo(x,y) : ctx.moveTo(x,y); st = true;
+        started ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+        started = true;
       }
-      ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.stroke();
+      ctx.strokeStyle = color; ctx.lineWidth = 1.3; ctx.stroke();
     };
-    line(o.line, '#22d3ee'); line(o.sig, '#f5b63f');
-    ctx.fillStyle = '#5b6f96'; ctx.textAlign = 'left';
-    ctx.fillText(fmtDate(o.time[0]), L, h-6);
-    ctx.textAlign = 'right'; ctx.fillText(fmtDate(o.time[n-1]), w-R, h-6);
+    drawLine(opt.line, '#22d3ee');
+    drawLine(opt.sig, '#f5b63f');
   }
 }
 
 /* ==================================================
-   Flow: setup → lock → app
+   Core Lifecycle & Boot
    ================================================== */
 async function boot(){
-  applyPrefs();
-  const pub = await vault.loadPublic();   // เฉพาะคีย์ฟรีที่ผู้ใช้จงใจบันทึกเป็นสาธารณะ
-  state.ai = pub || { ...DEFAULT_AI };
-  state.unlocked = true;
-  $('#app').classList.remove('hidden');
-  if (store.get('ts_welcome')) $('#banner-welcome').classList.add('hidden');
-  checkHTTPBanner();
-  updateAIStatus();
-  updateUsageUI();
-  await refreshAll();
-  startAutoRefresh();
-}
-
-function applyPrefs(){
   const p = prefs();
   if (p.currency) state.currency = p.currency;
-  const sel = $('#set-currency'); if (sel) sel.value = state.currency;
+  if (store.get('ts_welcome') === '1') $('#banner-welcome').classList.add('hidden');
 
-}
+  const pubAI = await vault.loadPublic();
+  if (pubAI) state.ai = { ...DEFAULT_AI, ...pubAI };
+  else state.ai = { ...DEFAULT_AI };
 
-function applyProvider(prov, prefix){
-  const P = PROVIDERS[prov] || PROVIDERS.custom;
-  $('#' + prefix + '-base').value = P.base;
-  $('#' + prefix + '-model').value = P.model;
+  updateAIStatus();
+  $('#app').classList.remove('hidden');
+  state.unlocked = true;
+
+  try {
+    const rate = await loadThbRate();
+    if (rate) CUR.THB.rate = rate;
+  } catch(e){}
+  state.rate = CUR[state.currency].rate;
+
+  await refreshAll();
+  startAutoRefresh();
 }
 
 function updateAIStatus(){
   const el = $('#status-ai');
   if (!el) return;
-  if (isFreeAI(state.ai)){
-    el.textContent = 'AI: ' + (PROVIDERS[state.ai.provider] ? PROVIDERS[state.ai.provider].name : 'ฟรี') + ' • พร้อมใช้ (ฟรี)';
-    el.style.borderColor = '#1f5d4a';
-  } else {
-    el.textContent = 'AI: ' + (PROVIDERS[state.ai.provider] ? PROVIDERS[state.ai.provider].name : 'กำหนดเอง') + ' • คีย์ของคุณ';
-    el.style.borderColor = '#b58a2b';
+  const name = PROVIDERS[state.ai.provider] ? PROVIDERS[state.ai.provider].name : 'กำหนดเอง';
+  el.textContent = 'AI: ' + name;
+  updateUsageUI();
+}
+
+function applyProvider(key, target='set'){
+  const p = PROVIDERS[key];
+  if (!p) return;
+  const prefix = target === 'set' ? '#set-' : '#reg-';
+  if (key !== 'custom'){
+    $(prefix + 'base').value = p.base;
+    $(prefix + 'model').value = p.model;
   }
 }
 
-function checkHTTPBanner(){
-  $('#banner-http').classList.toggle('hidden', httpsOK());
-}
-
-/* ---------------- refresh ---------------- */
 async function refreshAll(){
   const btn = $('#btn-refresh');
   btn.disabled = true;
   try {
-    const [mk, gl, rate] = await Promise.all([
-      loadMarkets(),
-      loadGlobal(),
-      state.currency === 'THB' ? loadThbRate() : Promise.resolve(1)
-    ]);
-    if (rate) state.rate = rate;
+    await Promise.all([loadMarkets(), loadGlobal()]);
+    state.rate = CUR[state.currency].rate;
     renderOverview();
+    renderSpotlight();
+    updateCounts();
     renderTable();
-    const el = $('#last-update');
-    el.textContent = 'อัปเดตล่าสุด: ' + new Date().toLocaleTimeString('th-TH') + ' น. (ทุก 90 วิ)';
+    $('#last-update').textContent = 'อัปเดต: ' + new Date().toLocaleTimeString('th-TH') + ' (ทุก 90 วิ)';
     $('#banner-err').classList.add('hidden');
   } catch(e){
     $('#banner-err').classList.remove('hidden');
@@ -1485,6 +2038,7 @@ async function refreshAll(){
     btn.disabled = false;
   }
 }
+
 let autoTimer = null;
 function startAutoRefresh(){
   if (autoTimer) clearInterval(autoTimer);
@@ -1494,11 +2048,7 @@ function startAutoRefresh(){
   }, 90000);
 }
 
-function lockNow(){
-  /* โหมดสาธารณะ: ไม่มีหน้าล็อก — ปุ่มล็อกจะซ่อนอยู่ */
-}
-
-/* ---------------- settings ---------------- */
+/* ---------------- Settings & PIN ---------------- */
 function openSettings(){
   $('#modal-settings').classList.remove('hidden');
   $('#set-currency').value = state.currency;
@@ -1518,7 +2068,7 @@ async function saveAISettings(){
   const provider = $('#set-provider').value;
   const msgEl = $('#set-ai-msg');
   if (base && !/^https:\/\//i.test(base)){
-    msgEl.innerHTML = '<span style="color:var(--bad)">Base URL ต้องเป็น HTTPS เท่านั้น (เพื่อความปลอดภัย)</span>';
+    msgEl.innerHTML = '<span style="color:var(--bad)">Base URL ต้องเป็น HTTPS เท่านั้น</span>';
     return;
   }
   if (base && !model){
@@ -1531,7 +2081,6 @@ async function saveAISettings(){
   }
   const ai = { base: base || '', model: model || '', key, provider };
   if (!base || !key || isFreeAI(ai)){
-    // ฟรี: บันทึกแบบไม่ต้อง PIN และจำไว้สำหรับการเข้าใช้ครั้งต่อไป (เฉพาะคีย์ฟรี/ไม่มีคีย์)
     state.ai = ai;
     store.set('ts_public_ai_v1', JSON.stringify({ public: true, ai, saved: Date.now() }));
     store.del(LS.pin); store.del(LS.vault);
@@ -1541,10 +2090,9 @@ async function saveAISettings(){
     toast('บันทึกการตั้งค่า AI แล้ว');
     return;
   }
-  // มีคีย์ส่วนตัว: ตั้ง/ใช้ PIN เพื่อเข้ารหัส AES-256 ในเครื่องนี้เท่านั้น
   let pin = state.pin;
   if (!pin || !(await vault.load(pin))){
-    const p1 = prompt('🔐 ตั้ง PIN (ตัวเลข 4–12 หลัก) เพื่อเข้ารหัสคีย์ AI ในเครื่องนี้ — จำให้ดี ไม่สามารถกู้คืนได้:');
+    const p1 = prompt('🔐 ตั้ง PIN (ตัวเลข 4–12 หลัก) เพื่อเข้ารหัสคีย์ AI ในเครื่องนี้:');
     if (p1 === null) return;
     if (!/^\d{4,12}$/.test(p1.trim())){
       msgEl.innerHTML = '<span style="color:var(--bad)">PIN ต้องเป็นตัวเลข 4–12 หลัก</span>';
@@ -1557,7 +2105,7 @@ async function saveAISettings(){
   store.set(LS.pin, await hashPin(pin));
   await vault.save(pin, { ai, created: Date.now() });
   updateAIStatus();
-  msgEl.innerHTML = '<span style="color:var(--ok)">✅ บันทึกแล้ว — คีย์ถูกเข้ารหัส AES-256 ด้วย PIN ของคุณ เก็บในเครื่องนี้เท่านั้น</span>';
+  msgEl.innerHTML = '<span style="color:var(--ok)">✅ บันทึกแล้ว — คีย์ถูกเข้ารหัส AES-256 ด้วย PIN เก็บในเครื่องนี้เท่านั้น</span>';
   toast('บันทึกการตั้งค่า AI แล้ว');
 }
 
@@ -1588,7 +2136,7 @@ async function testAI(){
   } finally {
     state.ai = saved;
     btn.disabled = false;
-    btn.innerHTML = '🧪 ทดสอบการเชื่อมต่อ';
+    btn.innerHTML = '🧪 ทดสอบเชื่อมต่อ';
   }
 }
 
@@ -1599,7 +2147,7 @@ async function changePIN(){
   const err = $('#cp-err');
   err.textContent = '';
   if (!oldPin || !(await vault.load(oldPin))){
-    err.textContent = 'ยังไม่มี PIN ใช้งาน (คีย์ของคุณถูกบันทึกแบบไม่ต้องใช้ PIN) — ไม่จำเป็นต้องเปลี่ยน';
+    err.textContent = 'ยังไม่มี PIN ใช้งาน (คีย์ของคุณบันทึกแบบฟรี)';
     return;
   }
   if (n1.length < 4 || n1.length > 12 || !/^\d+$/.test(n1)){ err.textContent = 'PIN ใหม่ต้องเป็นตัวเลข 4–12 หลัก'; return; }
@@ -1609,11 +2157,11 @@ async function changePIN(){
   await vault.save(n1, data || {});
   state.pin = n1;
   $('#modal-pin').classList.add('hidden');
-  toast('✅ เปลี่ยน PIN แล้ว — คีย์ AI ถูกเข้ารหัสใหม่ด้วย PIN ใหม่');
+  toast('✅ เปลี่ยน PIN แล้ว — คีย์ AI ถูกเข้ารหัสใหม่เรียบร้อย');
 }
 
 function wipeAll(){
-  if (!confirm('ลบข้อมูลทั้งหมดจริงหรือ?\n\nจะลบ PIN และคีย์ AI ที่เก็บในเครื่องนี้ (คีย์ที่เว็บผู้ให้บริการยังอยู่ — คุณเอามากรอกใหม่ได้)')){
+  if (!confirm('ลบข้อมูลทั้งหมดในเครื่องนี้จริงหรือ?\n\nจะลบ PIN และคีย์ AI ที่บันทึกไว้ (คีย์ที่เว็บผู้ให้บริการยังอยู่)')){
     return;
   }
   store.del(LS.pin); store.del(LS.vault); store.del(LS.prefs); store.del(LS.usage); store.del('ts_public_ai_v1'); store.del('ts_welcome');
@@ -1621,7 +2169,7 @@ function wipeAll(){
 }
 
 /* ==================================================
-   Events
+   Event Wiring
    ================================================== */
 function switchTab(t){
   state.drawerTab = t;
@@ -1629,8 +2177,7 @@ function switchTab(t){
   $('#tab-score').classList.toggle('hidden', t !== 'score');
   $('#tab-ai').classList.toggle('hidden', t !== 'ai');
   if (t === 'score' && state.detailData){
-    // redraw เมื่อกลับมาแท็บ (canvas ถูกซ่อนตอน tab-ai)
-    const { d, score } = state.detailData;
+    const { d } = state.detailData;
     drawPriceChart(d);
     drawOscChart('cv-rsi', { vals: d.rsiArr, type:'rsi', time: d.t });
     drawOscChart('cv-macd', { hist: d.macdHist, line: d.macdLine, sig: d.macdSig, type:'macd', time: d.t });
@@ -1638,17 +2185,54 @@ function switchTab(t){
 }
 
 function wireEvents(){
-  // app
   $('#btn-refresh').onclick = () => refreshAll();
   $('#btn-settings').onclick = openSettings;
-  $('#btn-lock').classList.add('hidden');   // โหมดสาธารณะไม่มีหน้าล็อก
   const wc = $('#btn-close-welcome');
   if (wc) wc.onclick = () => { $('#banner-welcome').classList.add('hidden'); store.set('ts_welcome', '1'); };
+
+  // Mode Switcher Buttons
+  $$('.mode-btn').forEach(btn => {
+    btn.onclick = () => {
+      $$('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.mode = btn.dataset.mode;
+      renderTable();
+    };
+  });
+
+  // Filter Toggles
+  $('#tog-hide-pumped').onclick = () => {
+    state.filterHidePumped = !state.filterHidePumped;
+    $('#tog-hide-pumped').classList.toggle('active', state.filterHidePumped);
+    renderTable();
+  };
+  $('#tog-hide-stable').onclick = () => {
+    state.filterHideStable = !state.filterHideStable;
+    $('#tog-hide-stable').classList.toggle('active', state.filterHideStable);
+    renderTable();
+  };
+  $('#tog-only-high-score').onclick = () => {
+    state.filterOnlyHighScore = !state.filterOnlyHighScore;
+    $('#tog-only-high-score').classList.toggle('active', state.filterOnlyHighScore);
+    renderTable();
+  };
+
+  // Search
   $('#search').addEventListener('input', e => { state.search = e.target.value.trim().toLowerCase(); renderTable(); });
+
+  // Table row click
   $('#tbody').addEventListener('click', e => {
     const tr = e.target.closest('tr[data-id]');
     if (tr) openDrawer(tr.dataset.id);
   });
+
+  // Spotlight card click
+  $('#spotlight-grid').addEventListener('click', e => {
+    const card = e.target.closest('.spot-card[data-id]');
+    if (card && !e.target.closest('button')) openDrawer(card.dataset.id);
+  });
+
+  // Sorting
   $$('#tbl-wrap th').forEach(th => {
     th.onclick = () => {
       const k = th.dataset.k;
@@ -1662,7 +2246,7 @@ function wireEvents(){
     };
   });
 
-  // drawer
+  // Drawer
   $('#dr-close').onclick = closeDrawer;
   $('#overlay').onclick = closeDrawer;
   document.addEventListener('keydown', e => {
@@ -1670,7 +2254,7 @@ function wireEvents(){
   });
   $$('.dr-tab').forEach(el => el.onclick = () => switchTab(el.dataset.tab));
 
-  // settings
+  // Settings
   $('#set-close').onclick = closeSettings;
   $('#set-provider').onchange = e => applyProvider(e.target.value, 'set');
   $('#set-ai-save').onclick = saveAISettings;
@@ -1716,9 +2300,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && document
   boot();
 }
 
-/* เปิดเผย pure functions สำหรับเทสต์ (ไม่มีผลกับ UI) */
 if (typeof window !== 'undefined'){
-  window.TS = { sma, ema, rsi, macd, bollinger, atr, analyze, computeScore, quickScore, clamp, gradeFor };
+  window.TS = { sma, ema, rsi, macd, bollinger, atr, analyze, computeScore, quickScore, analyzeSparkline, isStableCoin, clamp, gradeFor };
 }
 </script>
 </body>
