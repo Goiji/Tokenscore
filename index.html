@@ -265,6 +265,11 @@ tbody tr.highlight-early:hover{background:rgba(45,212,167,0.1)}
 .rank-no{color:var(--tx3);font-weight:700;font-size:12.5px}
 .loading-row td{text-align:center;color:var(--tx3);padding:40px}
 footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
+/* ---------- แถวปุ่มแชร์/ติดตาม (footer) ---------- */
+.share-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:26px 0 18px}
+.share-row .btn{font-size:13px;padding:10px 20px;border-radius:999px;font-weight:700;gap:8px}
+.share-row .btn svg{display:block;flex:none}
+.share-row .btn:hover{border-color:var(--acc);box-shadow:0 0 18px var(--glow-cyan)}
 
 /* ---------- drawer ---------- */
 #overlay{position:fixed;inset:0;background:rgba(3,6,13,.7);backdrop-filter:blur(4px);z-index:40}
@@ -508,6 +513,11 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
   </div>
 
   <footer>
+    <div class="share-row">
+      <button class="btn" id="btn-share" title="เปิดหน้าต่างแชร์ของอุปกรณ์ หรือคัดลอกลิงก์หน้านี้">📤 แชร์ลิงก์</button>
+      <a class="btn" href="https://x.com/crypto_doy" target="_blank" rel="noopener" title="ติดตามที่ X (Twitter)"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> X</a>
+      <a class="btn" href="https://linktr.ee/crypto_doy" target="_blank" rel="noopener" title="รวมลิงก์ทั้งหมด (Linktree)">🔗 ลิงก์ทั้งหมด</a>
+    </div>
     <b>⚠️ คำเตือนความเสี่ยง:</b> คะแนนและบทวิเคราะห์ทั้งหมดคำนวณจากข้อมูลราคาย้อนหลังและโมเดล AI — <b>ไม่ใช่คำแนะนำการลงทุน</b>
     คริปโตเคอร์เรนซีมีความเสี่ยงสูง คุณอาจสูญเสียเงินทั้งหมด โปรดศึกษาด้วยตัวเองและลงทุนเท่าที่รับความเสี่ยงได้<br>
     ข้อมูลตลาด: CoinGecko (สาธารณะ, อาจล่าช้า) • AI เริ่มต้น: Pollinations (บริการฟรี ไม่ต้องมีคีย์; ผู้ใช้ที่มีคีย์ส่วนตัวสามารถใส่คีย์ OpenAI / OpenRouter / Groq ในตั้งค่า โดยคีย์จะถูกเข้ารหัส AES-256 ในเครื่องของคุณเท่านั้น) •
@@ -777,6 +787,44 @@ function toast(msg, type='ok', ms=3200){
   clearTimeout(toast._t);
   toast._t = setTimeout(() => el.classList.add('hidden'), ms);
 }
+
+/* ---- แชร์ลิงก์หน้าเว็บ: เปิดหน้าต่างแชร์ของอุปกรณ์ ถ้าไม่ได้ → คัดลอกให้อัตโนมัติ ---- */
+async function shareSite(){
+  const data = {
+    title: 'TokenScore',
+    text: '⚡ TokenScore — เรดาร์เหรียญน่าจับตา + AI วิเคราะห์ ฟรี',
+    url: location.href
+  };
+  if (navigator.share){
+    try { await navigator.share(data); return; }
+    catch(e){ if (e && e.name === 'AbortError') return; } // ผู้ใช้ปิดหน้าต่างแชร์เอง — ไม่ต้องทำอะไร
+  }
+  copyLink(data.url);
+}
+function copyLink(url){
+  const done = () => toast('📋 คัดลอกลิงก์หน้านี้แล้ว พร้อมแชร์ให้เพื่อนได้เลย', 'ok');
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(() => copyLinkFallback(url, done));
+  } else {
+    copyLinkFallback(url, done);
+  }
+}
+function copyLinkFallback(url, done){
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    done();
+  } catch(e){
+    toast('คัดลอกลิงก์ไม่สำเร็จ — ลิงก์คือ ' + url, 'err', 6000);
+  }
+}
+
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 function b64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
 function unb64(s){ return new Uint8Array(atob(s).split('').map(c => c.charCodeAt(0))); }
@@ -3268,6 +3316,7 @@ function switchTab(t){
 
 function wireEvents(){
   $('#btn-refresh').onclick = () => refreshAll();
+  $('#btn-share').onclick = () => shareSite();
   $('#btn-settings').onclick = openSettings;
   const wc = $('#btn-close-welcome');
   if (wc) wc.onclick = () => { $('#banner-welcome').classList.add('hidden'); store.set('ts_welcome', '1'); };
