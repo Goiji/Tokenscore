@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="TokenScore — ให้คะแนนเหรียญคริปโตด้วยอินดิเคเตอร์ทางเทคนิค (SMA, RSI, MACD, Bollinger) พร้อม AI วิเคราะห์แบบมุมมองนักลงทุนอาชีพ ฟรี ใช้ได้ทันที">
+<meta property="og:title" content="TokenScore ⚡ คะแนนเหรียญคริปโต + AI วิเคราะห์แบบมืออาชีพ">
+<meta property="og:description" content="คะแนน 0–100 จากอินดิเคเตอร์จริง + AI วิเคราะห์แบบนักลงทุนอาชีพ ฟรี ไม่ต้องสมัคร เปิดใช้ได้ทันที">
+<meta property="og:type" content="website">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src https:; base-uri 'none'; form-action 'none'">
 <title>TokenScore ⚡ คะแนนเหรียญคริปโต + AI วิเคราะห์แบบมือโปร</title>
@@ -200,73 +203,26 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
 </head>
 <body>
 
-<!-- ==================== ล็อกหน้าจอ ==================== -->
-<section id="screen-lock" class="screen hidden">
-  <div class="panel center">
-    <div class="logo" style="justify-content:center"><span class="mark">⚡</span>
-      <h1>Token<em>Score</em></h1></div>
-    <p class="sub">คะแนนเหรียญคริปโต + AI วิเคราะห์แบบมืออาชีพ<br>พื้นที่ส่วนตัวของคุณ — กรอก PIN เพื่อเข้าใช้งาน</p>
-    <input type="password" id="lock-pin" inputmode="numeric" maxlength="12"
-      placeholder="PIN ของคุณ" autocomplete="off" style="font-size:20px;text-align:center;letter-spacing:8px;font-weight:700">
-    <div class="msg-err" id="lock-err"></div>
-    <button class="btn primary" id="btn-unlock" style="width:100%">🔓 ปลดล็อก</button>
-    <p class="mt"><button class="linklike" id="btn-forgot">ลืม PIN? ล้างข้อมูลทั้งหมด</button></p>
-  </div>
-</section>
-
-<!-- ==================== ตั้งค่าครั้งแรก ==================== -->
-<section id="screen-setup" class="screen hidden">
-  <div class="panel">
-    <div class="logo"><span class="mark">⚡</span><h1>Token<em>Score</em></h1></div>
-    <p class="sub">ตั้งค่าใช้งานครั้งแรก (ใช้เวลาไม่ถึง 1 นาที)</p>
-
-    <div class="sec-title">1. ตั้งรหัส PIN (ความปลอดภัย)</div>
-    <div class="grid2">
-      <div><label>PIN (4–12 ตัวเลข)</label><input type="password" id="su-pin1" inputmode="numeric" maxlength="12" placeholder="••••"></div>
-      <div><label>ยืนยัน PIN อีกครั้ง</label><input type="password" id="su-pin2" inputmode="numeric" maxlength="12" placeholder="••••"></div>
-    </div>
-    <p class="hint">🔒 PIN ใช้เข้ารหัสคีย์ AI ของคุณในเครื่องนี้ด้วย AES-256 — อย่าลืม PIN เพราะไม่มีทางกู้คืนได้</p>
-
-    <div class="sec-title">2. AI วิเคราะห์ (ไม่บังคับ — ข้ามได้)</div>
-    <p class="hint" style="margin-top:0">คีย์ API จะถูก<b>เข้ารหัสเก็บในเบราว์เซอร์ของคุณเท่านั้น</b> ไม่ฝังในโค้ด ไม่ส่งไปที่ใดนอกจากผู้ให้บริการ AI ที่คุณเลือก</p>
-    <label>ผู้ให้บริการ AI</label>
-    <select id="su-provider">
-      <option value="openrouter">OpenRouter (รองรับหลายโมเดล ราคาถูก)</option>
-      <option value="openai">OpenAI (GPT-4o / GPT-4o mini)</option>
-      <option value="groq">Groq (เร็วมาก ฟรีบางโมเดล)</option>
-      <option value="pollinations">Pollinations (ฟรี ทดลองใช้ ไม่ต้องใช้คีย์)</option>
-      <option value="custom">กำหนดเอง (OpenAI-compatible)</option>
-    </select>
-    <label>Base URL (Endpoint)</label>
-    <input type="url" id="su-base" placeholder="https://api.openai.com/v1" autocomplete="off" spellcheck="false">
-    <label>ชื่อโมเดล</label>
-    <input type="text" id="su-model" placeholder="gpt-4o-mini" autocomplete="off" spellcheck="false">
-    <label>API Key <span style="color:var(--tx3)">(เว้นว่างได้ถ้าเป็นบริการฟรี)</span></label>
-    <input type="password" id="su-key" placeholder="sk-..." autocomplete="off" spellcheck="false">
-    <p class="hint">⚠️ อย่ากรอกคีย์ API ที่ได้จากเว็บไซต์ปลอม — ใช้คีย์จากเว็บทางการของผู้ให้บริการเท่านั้น</p>
-
-    <div class="msg-err" id="su-err"></div>
-    <div class="flex mt">
-      <button class="btn primary" id="btn-su-save" style="flex:1">บันทึกและเริ่มใช้งาน →</button>
-      <button class="btn" id="btn-su-skip">ข้าม (ตั้ง AI ทีหลังได้)</button>
-    </div>
-  </div>
-</section>
-
 <!-- ==================== แอปหลัก ==================== -->
 <div id="app" class="hidden">
   <header>
     <div class="logo"><span class="mark">⚡</span><h1>Token<em>Score</em></h1></div>
+    <span class="pill" id="tagline">คะแนนคริปโต + AI วิเคราะห์แบบมืออาชีพ — ฟรี ใช้ได้ทันที</span>
     <span class="pill" id="status-ai">AI: —</span>
     <div class="spacer"></div>
     <button class="btn icon" id="btn-refresh" title="รีเฟรชข้อมูล">🔄</button>
     <button class="btn icon" id="btn-settings" title="ตั้งค่า">⚙️</button>
-    <button class="btn icon" id="btn-lock" title="ล็อกหน้าจอ">🔒</button>
+    <button class="btn icon hidden" id="btn-lock" title="ล็อกหน้าจอ">🔒</button>
   </header>
 
   <div class="banner hidden" id="banner-http">
-    ⚠️ หน้านี้เปิดผ่าน HTTP (ไม่ปลอดภัย) — ระบบจะ<b>ปิดการเรียก AI</b> เพื่อกันคีย์ของคุณรั่วไหล
+    ⚠️ หน้านี้เปิดผ่าน HTTP (ไม่ปลอดภัย) — ระบบจะ<b>ปิดการเรียก AI</b> เพื่อความปลอดภัยของคีย์
     กรุณาใช้งานผ่าน HTTPS (เช่น GitHub Pages) หรือ localhost เท่านั้น
+  </div>
+  <div class="banner" id="banner-welcome">
+    👋 ยินดีต้อนรับสู่ <b>TokenScore</b> — คะแนนคริปโตจากอินดิเคเตอร์จริง + AI วิเคราะห์แบบนักลงทุนอาชีพ
+    ใช้ฟรีได้ทันที (AI เริ่มต้นเป็นบริการฟรี ไม่ต้องมีคีย์)
+    <button class="btn small" id="btn-close-welcome" style="margin-left:10px">รับทราบ ✕</button>
   </div>
   <div class="banner hidden" id="banner-err"></div>
 
@@ -301,7 +257,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
   <footer>
     <b>⚠️ คำเตือนความเสี่ยง:</b> คะแนนและบทวิเคราะห์ทั้งหมดคำนวณจากข้อมูลราคาย้อนหลังและโมเดล AI — ไม่ใช่คำแนะนำการลงทุน
     คริปโตมีความเสี่ยงสูง คุณอาจสูญเสียเงินทั้งหมด โปรดตัดสินใจด้วยตัวเอง และลงทุนเท่าที่รับความเสี่ยงได้<br>
-    ข้อมูลตลาด: CoinGecko (สาธารณะ, อาจล่าช้า) • คีย์ AI ของคุณถูกเก็บเข้ารหัสในเบราว์เซอร์เครื่องนี้เท่านั้น • อัปเดตอัตโนมัติทุก 90 วินาที
+    ข้อมูลตลาด: CoinGecko (สาธารณะ, อาจล่าช้า) • AI เริ่มต้น: Pollinations (บริการฟรีสาธารณะ — ความเร็ว/ความพร้อมขึ้นอยู่กับผู้ให้บริการ; ผู้ใช้ที่มีคีย์ของตัวเองเลือกใช้ OpenAI / OpenRouter / Groq ได้ในตั้งค่า และคีย์จะถูกเก็บเข้ารหัสในเครื่องของผู้นั้นเท่านั้น) • อัปเดตอัตโนมัติทุก 90 วินาที
   </footer>
 </div>
 
@@ -372,6 +328,9 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
     </select>
 
     <div class="sec-title">AI (OpenAI-compatible)</div>
+    <p class="hint" style="margin:0">ค่าเริ่มต้นเป็น <b>Pollinations (ฟรี ไม่ต้องใช้คีย์)</b> — ใช้ได้เลยทันที
+      หรือใช้คีย์ของคุณเอง (OpenAI / OpenRouter / Groq) เพื่อความเร็วและความเสถียรที่มากกว่า
+      คีย์ของคุณจะถูกเข้ารหัสและเก็บในเครื่องของคุณเท่านั้น ไม่ถูกส่งไปให้เจ้าของเว็บนี้</p>
     <label>ผู้ให้บริการ</label>
     <select id="set-provider">
       <option value="openrouter">OpenRouter</option>
@@ -391,19 +350,19 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
     </div>
     <div class="flex mt">
       <button class="btn primary" id="set-ai-save" style="flex:1">💾 บันทึกการตั้งค่า AI</button>
-      <button class="btn" id="set-ai-test">🧪 ทดสอบการเชื่อมต่อ</button>
+      <button class="btn" id="set-ai-test">🧪 ทดสอบ</button>
+      <button class="btn" id="set-ai-default">↩️ คืนค่า AI ฟรี</button>
     </div>
     <p class="hint" id="set-ai-msg"></p>
 
-    <div class="sec-title">ความปลอดภัย</div>
-    <label class="flex" style="margin-top:10px;cursor:pointer">
-      <input type="checkbox" id="set-autolock" style="width:auto"> ล็อกหน้าจออัตโนมัติเมื่อไม่ใช้งาน 15 นาที
-    </label>
+    <div class="sec-title">ข้อมูลในเครื่องของคุณ</div>
+    <p class="hint" style="margin:8px 0 0">คีย์ AI ของคุณจะถูกเข้ารหัส AES-256 ด้วย PIN ส่วนตัวและเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น —
+      ไม่ถูกส่งไปให้เจ้าของเว็บนี้</p>
     <div class="flex mt">
-      <button class="btn" id="set-chpin">🔑 เปลี่ยน PIN</button>
+      <button class="btn" id="set-chpin">🔑 เปลี่ยน PIN (ถ้าใช้คีย์ส่วนตัว)</button>
       <button class="btn danger" id="set-wipe">🗑️ ล้างข้อมูลทั้งหมด</button>
     </div>
-    <p class="hint">ล้างข้อมูล = ลบ PIN + คีย์ AI ทั้งหมดจากเครื่องนี้ (คีย์ AI ของคุณที่เว็บผู้ให้บริการยังอยู่ครบ)</p>
+    <p class="hint">ล้างข้อมูล = ลบคีย์ AI/การตั้งค่าที่เก็บในเครื่องนี้ (คีย์ AI ที่เว็บผู้ให้บริการยังอยู่ครบ)</p>
 
     <div class="sec-title">การใช้งาน AI วันนี้</div>
     <p class="hint" id="set-usage" style="margin-top:6px">—</p>
@@ -415,8 +374,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
 <div id="modal-pin" class="hidden">
   <div class="modal-card" style="max-width:440px">
     <h2>🔑 เปลี่ยน PIN</h2>
-    <label>PIN ปัจจุบัน</label>
-    <input type="password" id="cp-old" inputmode="numeric" maxlength="12">
+    <p class="hint" style="margin:6px 0 10px">ใช้ได้เฉพาะเมื่อคุณบันทึกคีย์ AI แบบมี PIN เท่านั้น</p>
     <label>PIN ใหม่ (4–12 ตัวเลข)</label>
     <input type="password" id="cp-new1" inputmode="numeric" maxlength="12">
     <label>ยืนยัน PIN ใหม่</label>
@@ -441,15 +399,20 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:18px;line-height:1.7}
 
 /* ---------------- ค่าคงที่ ---------------- */
 const CG = 'https://api.coingecko.com/api/v3';
+/* หมายเหตุ: ts_pin/ts_vault มีไว้สำหรับผู้ใช้ที่นำคีย์ AI ของตัวเองมาใช้ —
+   คีย์จะถูกเข้ารหัส AES-GCM ด้วย PIN ส่วนตัวของผู้นั้น เก็บในเบราว์เซอร์ของเขาเท่านั้น */
 const LS = { pin:'ts_pin_v1', vault:'ts_vault_v1', prefs:'ts_prefs_v1', usage:'ts_usage_v1' };
 const AI_LIMIT_HOUR = 12;          // จำกัดการเรียก AI ต่อชั่วโมง (กันคีย์ถูกใช้เกินงบ)
+const AI_LIMIT_FREE_HOUR = 20;     // โควตาบริการ AI ฟรี (ต่อผู้ใช้ต่อชั่วโมง)
 const PROVIDERS = {
   openrouter:   { name:'OpenRouter',            base:'https://openrouter.ai/api/v1',    model:'deepseek/deepseek-chat' },
   openai:       { name:'OpenAI',                base:'https://api.openai.com/v1',       model:'gpt-4o-mini' },
   groq:         { name:'Groq',                  base:'https://api.groq.com/openai/v1',  model:'llama-3.3-70b-versatile' },
-  pollinations: { name:'Pollinations (ฟรี)',     base:'https://text.pollinations.ai/openai', model:'openai' },
+  pollinations: { name:'Pollinations (ฟรี)',     base:'https://text.pollinations.ai/openai', model:'openai', free:true },
   custom:       { name:'กำหนดเอง',               base:'',                                model:'' }
 };
+const DEFAULT_AI = { base:'https://text.pollinations.ai/openai', model:'openai', key:'', provider:'pollinations' };
+const AI_TIP = 'เคล็ดลับ: AI ฟรีสาธารณะอาจตอบช้าหรือเต็มเป็นช่วง ๆ — ใช้คีย์ของคุณเอง (OpenAI / OpenRouter / Groq) เพื่อความเร็วและความเสถียร (ดูใน ⚙️ ตั้งค่า)';
 
 /* ---------------- utils ---------------- */
 const $ = s => document.querySelector(s);
@@ -563,6 +526,14 @@ const vault = {
     try { return await decryptJSON(JSON.parse(raw), pin); }
     catch(e){ return null; }
   },
+  /* โหลดโดยไม่ต้องใช้ PIN ได้เฉพาะคีย์ฟรีที่ผู้ใช้จงใจบันทึกเป็นสาธารณะ (checkbox) เท่านั้น */
+  async loadPublic(){
+    try {
+      const d = JSON.parse(store.get('ts_public_ai_v1') || 'null');
+      if (d && d.public && d.ai && (!d.ai.key || String(d.ai.key).startsWith('pk'))) return d.ai;
+    } catch(e){}
+    return null;
+  },
   async save(pin, data){ store.set(LS.vault, JSON.stringify(await encryptJSON(data, pin))); },
   clear(){ store.del(LS.vault); store.del(LS.pin); }
 };
@@ -571,7 +542,7 @@ const vault = {
 const state = {
   unlocked: false,
   pin: null,
-  ai: { base:'', model:'', key:'', provider:'custom' },
+  ai: { ...DEFAULT_AI },
   currency: 'USD',
   rate: 1,
   coins: [],
@@ -582,7 +553,6 @@ const state = {
   detail: null,          // coin ที่เปิดอยู่
   detailData: null,      // ผลคำนวณ
   ohlcCache: new Map(),
-  autolock: true,
   lastActivity: Date.now(),
   drawerTab: 'score'
 };
@@ -594,11 +564,13 @@ function usage(){
   try { return JSON.parse(store.get(LS.usage) || '{"d":"","n":0}'); } catch(e){ return { d:'', n:0 }; }
 }
 function saveUsage(u){ store.set(LS.usage, JSON.stringify(u)); }
-function aiCallsLeft(){
+function isFreeAI(cfg){ return !cfg || !cfg.key || !!(PROVIDERS[cfg.provider] && PROVIDERS[cfg.provider].free); }
+function aiCallsLeft(freeAware){
   const u = usage();
   const today = new Date().toISOString().slice(0,13); // นับเป็นรายชั่วโมง
-  if (u.d !== today) return AI_LIMIT_HOUR;
-  return Math.max(0, AI_LIMIT_HOUR - u.n);
+  const limit = (freeAware && isFreeAI(state.ai)) ? AI_LIMIT_FREE_HOUR : AI_LIMIT_HOUR;
+  if (u.d !== today) return limit;
+  return Math.max(0, limit - u.n);
 }
 function spendAiCall(){
   const today = new Date().toISOString().slice(0,13);
@@ -610,8 +582,10 @@ function spendAiCall(){
 function updateUsageUI(){
   const el = $('#set-usage');
   if (!el) return;
-  const left = aiCallsLeft();
-  el.textContent = 'เรียกใช้ไปแล้ว: ' + (AI_LIMIT_HOUR - left) + ' / ' + AI_LIMIT_HOUR + ' ครั้งในชั่วโมงนี้ (คงเหลือ ' + left + ')';
+  const free = isFreeAI(state.ai);
+  const limit = free ? AI_LIMIT_FREE_HOUR : AI_LIMIT_HOUR;
+  const left = aiCallsLeft(true);
+  el.textContent = (free ? 'โหมด AI ฟรี' : 'โหมดคีย์ของคุณเอง') + ' — เรียกใช้ไปแล้ว ' + (limit - left) + ' / ' + limit + ' ครั้งในชั่วโมงนี้ (คงเหลือ ' + left + ')';
 }
 
 /* ==================================================
@@ -885,11 +859,11 @@ function httpsOK(){
 }
 async function callAI(messages, { stream=false } = {}){
   if (!state.ai.base) throw new Error('ยังไม่ได้ตั้งค่า AI');
-  if (state.ai.key === '' && state.ai.provider !== 'pollinations')
+  if (state.ai.key === '' && !isFreeAI(state.ai))
     throw new Error('ยังไม่ได้กรอก API Key');
   if (!httpsOK()) throw new Error('SECURITY: หน้านี้เปิดผ่าน HTTP — ปิดการเรียก AI เพื่อความปลอดภัย');
-  const left = aiCallsLeft();
-  if (left <= 0) throw new Error('ถึงขีดจำกัดการใช้งาน AI (12 ครั้ง/ชม.) — กรุณารอชั่วโมงถัดไป');
+  const left = aiCallsLeft(true);
+  if (left <= 0) throw new Error('ถึงขีดจำกัดการใช้งาน AI ในชั่วโมงนี้ — กรุณารอชั่วโมงถัดไป หรือใช้คีย์ของคุณเอง');
   if (!/^https:\/\//i.test(state.ai.base)) throw new Error('SECURITY: Base URL ต้องเป็น HTTPS เท่านั้น');
 
   const base = state.ai.base.replace(/\/+$/, '');
@@ -1255,23 +1229,19 @@ function renderScore(coin, d, score){
 
 function renderAIPanel(coin, d, score){
   const box = $('#ai-status');
-  if (!state.ai.base){
-    box.innerHTML = '<p class="hint">ยังไม่ได้ตั้งค่า AI — กด ⚙️ ตั้งค่า แล้วกรอกคีย์ API ของคุณเอง (OpenAI / OpenRouter / Groq)<br>'
-      + 'คีย์จะถูกเข้ารหัสเก็บในเครื่องคุณเท่านั้น เพื่อให้ AI วิเคราะห์แบบนักลงทุนอาชีพ</p>'
-      + '<button class="btn small mt" id="ai-gosettings">⚙️ ไปที่ตั้งค่า</button>';
-    $('#ai-out').classList.add('hidden');
-    const g = $('#ai-gosettings'); if (g) g.onclick = () => openSettings();
-    return;
-  }
-  const left = aiCallsLeft();
+  const free = isFreeAI(state.ai);
+  const left = aiCallsLeft(true);
+  const provName = PROVIDERS[state.ai.provider] ? PROVIDERS[state.ai.provider].name : 'กำหนดเอง';
   box.innerHTML = `
-    <p class="hint" style="margin:0 0 10px">ผู้ให้บริการ: ${esc(PROVIDERS[state.ai.provider] ? PROVIDERS[state.ai.provider].name : 'กำหนดเอง')} • โมเดล ${esc(state.ai.model)} • คงเหลือ ${left} ครั้ง/ชม.</p>
-    <button class="btn primary" id="ai-run" ${left <= 0 || !httpsOK() ? 'disabled' : ''}>🧠 วิเคราะห์ด้วย AI (มุมมองนักลงทุนอาชีพ)</button>`;
+    <p class="hint" style="margin:0 0 10px">${free ? 'โหมด AI ฟรี' : 'โหมดคีย์ของคุณเอง'} — ${esc(provName)} • โมเดล ${esc(state.ai.model)} • คงเหลือ ${left} ครั้ง/ชม. ${free ? '• ' + AI_TIP : ''}</p>
+    <button class="btn primary" id="ai-run" ${left <= 0 || !httpsOK() ? 'disabled' : ''}>🧠 วิเคราะห์ด้วย AI (มุมมองนักลงทุนอาชีพ)</button>
+    <button class="btn small" id="ai-go-settings" style="margin-left:6px">⚙️ ตั้งค่า AI</button>`;
   $('#ai-out').classList.add('hidden');
+  const gs = $('#ai-go-settings'); if (gs) gs.onclick = () => openSettings();
   $('#ai-run').onclick = async () => {
     const btn = $('#ai-run');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> AI กำลังวิเคราะห์...';
+    btn.innerHTML = '<span class="spinner"></span> AI กำลังวิเคราะห์... (อาจใช้เวลา 10–60 วิ)';
     try {
       const txt = await callAI([
         { role:'system', content:'คุณคือนักวิเคราะห์คริปโตมืออาชีพ ตอบเป็นภาษาไทย ใช้ markdown ตามหัวข้อที่กำหนด ห้ามอ้างตัวเลขที่ไม่ได้ให้มา' },
@@ -1282,7 +1252,8 @@ function renderAIPanel(coin, d, score){
       out.classList.remove('hidden');
     } catch(e){
       const out = $('#ai-out');
-      out.innerHTML = '<p style="color:var(--bad);font-size:13px">❌ ' + esc(e.message) + '</p>';
+      out.innerHTML = '<p style="color:var(--bad);font-size:13px">❌ ' + esc(e.message) + '</p>'
+        + (free ? '<p class="hint">' + AI_TIP + '</p>' : '');
       out.classList.remove('hidden');
     } finally {
       btn.disabled = false;
@@ -1450,77 +1421,14 @@ function drawOscChart(id, o){
    ================================================== */
 async function boot(){
   applyPrefs();
-  const hasPin = !!store.get(LS.pin);
-  if (!hasPin){
-    showSetup();
-    return;
-  }
-  showLock();
-}
-function showSetup(){
-  $('#app').classList.add('hidden');
-  $('#screen-setup').classList.remove('hidden');
-  $('#screen-lock').classList.add('hidden');
-  applyProvider('openrouter', 'su');
-}
-function showLock(){
-  $('#app').classList.add('hidden');
-  $('#screen-setup').classList.add('hidden');
-  $('#screen-lock').classList.remove('hidden');
-  const inp = $('#lock-pin');
-  inp.value = '';
-  setTimeout(() => inp.focus(), 60);
-}
-async function unlock(){
-  const pin = $('#lock-pin').value.trim();
-  const errEl = $('#lock-err');
-  errEl.textContent = '';
-  if (pin.length < 4){ errEl.textContent = 'PIN ต้องมีอย่างน้อย 4 ตัว'; return; }
-  const h = await hashPin(pin);
-  if (h !== store.get(LS.pin)){
-    errEl.textContent = 'PIN ไม่ถูกต้อง';
-    const panel = $('#lock-pin').closest('.panel');
-    panel.classList.remove('shake'); void panel.offsetWidth; panel.classList.add('shake');
-    return;
-  }
-  const data = await vault.load(pin);
-  if (data && data.ai) state.ai = data.ai;
-  state.pin = pin;
+  const pub = await vault.loadPublic();   // เฉพาะคีย์ฟรีที่ผู้ใช้จงใจบันทึกเป็นสาธารณะ
+  state.ai = pub || { ...DEFAULT_AI };
   state.unlocked = true;
-  state.lastActivity = Date.now();
-  $('#screen-lock').classList.add('hidden');
   $('#app').classList.remove('hidden');
+  if (store.get('ts_welcome')) $('#banner-welcome').classList.add('hidden');
   checkHTTPBanner();
   updateAIStatus();
   updateUsageUI();
-  await refreshAll();
-  startAutoRefresh();
-}
-async function setupSave(){
-  const p1 = $('#su-pin1').value.trim(), p2 = $('#su-pin2').value.trim();
-  const errEl = $('#su-err');
-  errEl.textContent = '';
-  if (p1.length < 4 || p1.length > 12 || !/^\d+$/.test(p1)){ errEl.textContent = 'PIN ต้องเป็นตัวเลข 4–12 หลัก'; return; }
-  if (p1 !== p2){ errEl.textContent = 'PIN ทั้งสองช่องไม่ตรงกัน'; return; }
-
-  const base = $('#su-base').value.trim().replace(/\/+$/, '');
-  const model = $('#su-model').value.trim();
-  const key = $('#su-key').value.trim();
-  if (base && !/^https:\/\//i.test(base)){ errEl.textContent = 'Base URL ต้องขึ้นต้นด้วย https:// (ปลอดภัยเท่านั้น)'; return; }
-
-  const ai = base ? { base, model: model || 'gpt-4o-mini', key, provider: $('#su-provider').value } : null;
-  store.set(LS.pin, await hashPin(p1));
-  await vault.save(p1, { ai, created: Date.now() });
-  state.ai = ai || { base:'', model:'', key:'', provider:'custom' };
-  state.pin = p1;
-  state.unlocked = true;
-  state.lastActivity = Date.now();
-  $('#screen-setup').classList.add('hidden');
-  $('#app').classList.remove('hidden');
-  checkHTTPBanner();
-  updateAIStatus();
-  updateUsageUI();
-  toast(ai ? '✅ ตั้งค่าเสร็จ — คีย์ AI ถูกเข้ารหัสเก็บในเครื่องคุณแล้ว' : '✅ เริ่มใช้งานแล้ว (ตั้งค่า AI ทีหลังได้ที่ ⚙️)');
   await refreshAll();
   startAutoRefresh();
 }
@@ -1528,9 +1436,8 @@ async function setupSave(){
 function applyPrefs(){
   const p = prefs();
   if (p.currency) state.currency = p.currency;
-  if (p.autolock !== undefined) state.autolock = !!p.autolock;
   const sel = $('#set-currency'); if (sel) sel.value = state.currency;
-  const al = $('#set-autolock'); if (al) al.checked = state.autolock;
+
 }
 
 function applyProvider(prov, prefix){
@@ -1541,9 +1448,14 @@ function applyProvider(prov, prefix){
 
 function updateAIStatus(){
   const el = $('#status-ai');
-  if (!state.ai.base){ el.textContent = 'AI: ยังไม่ตั้งค่า'; el.style.borderColor = '#5b6f96'; return; }
-  el.textContent = 'AI: ' + (PROVIDERS[state.ai.provider] ? PROVIDERS[state.ai.provider].name : 'กำหนดเอง') + ' • พร้อมใช้';
-  el.style.borderColor = '#1f5d4a';
+  if (!el) return;
+  if (isFreeAI(state.ai)){
+    el.textContent = 'AI: ' + (PROVIDERS[state.ai.provider] ? PROVIDERS[state.ai.provider].name : 'ฟรี') + ' • พร้อมใช้ (ฟรี)';
+    el.style.borderColor = '#1f5d4a';
+  } else {
+    el.textContent = 'AI: ' + (PROVIDERS[state.ai.provider] ? PROVIDERS[state.ai.provider].name : 'กำหนดเอง') + ' • คีย์ของคุณ';
+    el.style.borderColor = '#b58a2b';
+  }
 }
 
 function checkHTTPBanner(){
@@ -1580,29 +1492,16 @@ function startAutoRefresh(){
     if (!state.unlocked || document.hidden) return;
     refreshAll();
   }, 90000);
-  // auto-lock
-  setInterval(() => {
-    if (!state.unlocked || !state.autolock) return;
-    if (Date.now() - state.lastActivity > 15*60*1000) lockNow();
-  }, 30000);
 }
 
 function lockNow(){
-  if (!state.unlocked) return;
-  state.unlocked = false;
-  state.pin = null;
-  state.ai = { base:'', model:'', key:'', provider:'custom' };
-  closeDrawer();
-  closeSettings();
-  showLock();
-  toast('🔒 ล็อกหน้าจอแล้ว', 'ok', 2000);
+  /* โหมดสาธารณะ: ไม่มีหน้าล็อก — ปุ่มล็อกจะซ่อนอยู่ */
 }
 
 /* ---------------- settings ---------------- */
 function openSettings(){
   $('#modal-settings').classList.remove('hidden');
   $('#set-currency').value = state.currency;
-  $('#set-autolock').checked = state.autolock;
   $('#set-provider').value = state.ai.provider || 'custom';
   $('#set-base').value = state.ai.base || '';
   $('#set-model').value = state.ai.model || '';
@@ -1617,18 +1516,44 @@ async function saveAISettings(){
   const model = $('#set-model').value.trim();
   const key = $('#set-key').value.trim();
   const provider = $('#set-provider').value;
+  const msgEl = $('#set-ai-msg');
   if (base && !/^https:\/\//i.test(base)){
-    $('#set-ai-msg').innerHTML = '<span style="color:var(--bad)">Base URL ต้องเป็น HTTPS เท่านั้น (เพื่อความปลอดภัย)</span>';
+    msgEl.innerHTML = '<span style="color:var(--bad)">Base URL ต้องเป็น HTTPS เท่านั้น (เพื่อความปลอดภัย)</span>';
     return;
   }
   if (base && !model){
-    $('#set-ai-msg').innerHTML = '<span style="color:var(--bad)">กรุณากรอกชื่อโมเดล</span>';
+    msgEl.innerHTML = '<span style="color:var(--bad)">กรุณากรอกชื่อโมเดล</span>';
     return;
   }
-  state.ai = { base: base || '', model: model || '', key, provider };
-  await vault.save(state.pin, { ai: state.ai, created: Date.now() });
+  const ai = { base: base || '', model: model || '', key, provider };
+  if (!base || !key || isFreeAI(ai)){
+    // ฟรี: บันทึกแบบไม่ต้อง PIN และจำไว้สำหรับการเข้าใช้ครั้งต่อไป (เฉพาะคีย์ฟรี/ไม่มีคีย์)
+    state.ai = ai;
+    store.set('ts_public_ai_v1', JSON.stringify({ public: true, ai, saved: Date.now() }));
+    store.del(LS.pin); store.del(LS.vault);
+    state.pin = null;
+    updateAIStatus();
+    msgEl.innerHTML = '<span style="color:var(--ok)">✅ บันทึกแล้ว — ใช้ AI ฟรีได้ทันที</span>';
+    toast('บันทึกการตั้งค่า AI แล้ว');
+    return;
+  }
+  // มีคีย์ส่วนตัว: ตั้ง/ใช้ PIN เพื่อเข้ารหัส AES-256 ในเครื่องนี้เท่านั้น
+  let pin = state.pin;
+  if (!pin || !(await vault.load(pin))){
+    const p1 = prompt('🔐 ตั้ง PIN (ตัวเลข 4–12 หลัก) เพื่อเข้ารหัสคีย์ AI ในเครื่องนี้ — จำให้ดี ไม่สามารถกู้คืนได้:');
+    if (p1 === null) return;
+    if (!/^\d{4,12}$/.test(p1.trim())){
+      msgEl.innerHTML = '<span style="color:var(--bad)">PIN ต้องเป็นตัวเลข 4–12 หลัก</span>';
+      return;
+    }
+    pin = p1.trim();
+  }
+  state.ai = ai;
+  state.pin = pin;
+  store.set(LS.pin, await hashPin(pin));
+  await vault.save(pin, { ai, created: Date.now() });
   updateAIStatus();
-  $('#set-ai-msg').innerHTML = '<span style="color:var(--ok)">✅ บันทึกแล้ว — คีย์ถูกเข้ารหัส AES-256 เก็บในเครื่องนี้เท่านั้น</span>';
+  msgEl.innerHTML = '<span style="color:var(--ok)">✅ บันทึกแล้ว — คีย์ถูกเข้ารหัส AES-256 ด้วย PIN ของคุณ เก็บในเครื่องนี้เท่านั้น</span>';
   toast('บันทึกการตั้งค่า AI แล้ว');
 }
 
@@ -1664,13 +1589,13 @@ async function testAI(){
 }
 
 async function changePIN(){
-  const oldPin = $('#cp-old').value.trim();
+  const oldPin = state.pin || '';
   const n1 = $('#cp-new1').value.trim();
   const n2 = $('#cp-new2').value.trim();
   const err = $('#cp-err');
   err.textContent = '';
-  if ((await hashPin(oldPin)) !== store.get(LS.pin)){
-    err.textContent = 'PIN ปัจจุบันไม่ถูกต้อง';
+  if (!oldPin || !(await vault.load(oldPin))){
+    err.textContent = 'ยังไม่มี PIN ใช้งาน (คีย์ของคุณถูกบันทึกแบบไม่ต้องใช้ PIN) — ไม่จำเป็นต้องเปลี่ยน';
     return;
   }
   if (n1.length < 4 || n1.length > 12 || !/^\d+$/.test(n1)){ err.textContent = 'PIN ใหม่ต้องเป็นตัวเลข 4–12 หลัก'; return; }
@@ -1687,7 +1612,7 @@ function wipeAll(){
   if (!confirm('ลบข้อมูลทั้งหมดจริงหรือ?\n\nจะลบ PIN และคีย์ AI ที่เก็บในเครื่องนี้ (คีย์ที่เว็บผู้ให้บริการยังอยู่ — คุณเอามากรอกใหม่ได้)')){
     return;
   }
-  store.del(LS.pin); store.del(LS.vault); store.del(LS.prefs); store.del(LS.usage);
+  store.del(LS.pin); store.del(LS.vault); store.del(LS.prefs); store.del(LS.usage); store.del('ts_public_ai_v1'); store.del('ts_welcome');
   location.reload();
 }
 
@@ -1709,29 +1634,12 @@ function switchTab(t){
 }
 
 function wireEvents(){
-  // lock screen
-  $('#btn-unlock').onclick = unlock;
-  $('#lock-pin').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
-  $('#btn-forgot').onclick = () => {
-    if (confirm('ลืม PIN จริงหรือ?\n\nระบบจะลบ PIN และคีย์ AI ที่เก็บในเครื่องนี้ทั้งหมด แล้วเริ่มตั้งค่าใหม่')) {
-      vault.clear();
-      store.del(LS.prefs);
-      location.reload();
-    }
-  };
-
-  // setup
-  $('#su-provider').onchange = e => { if (e.target.value !== 'pollinations') applyProvider(e.target.value, 'su'); else applyProvider(e.target.value, 'su'); };
-  $('#btn-su-save').onclick = setupSave;
-  $('#btn-su-skip').onclick = () => {
-    $('#su-base').value = ''; $('#su-model').value = ''; $('#su-key').value = '';
-    setupSave();
-  };
-
   // app
   $('#btn-refresh').onclick = () => refreshAll();
   $('#btn-settings').onclick = openSettings;
-  $('#btn-lock').onclick = lockNow;
+  $('#btn-lock').classList.add('hidden');   // โหมดสาธารณะไม่มีหน้าล็อก
+  const wc = $('#btn-close-welcome');
+  if (wc) wc.onclick = () => { $('#banner-welcome').classList.add('hidden'); store.set('ts_welcome', '1'); };
   $('#search').addEventListener('input', e => { state.search = e.target.value.trim().toLowerCase(); renderTable(); });
   $('#tbody').addEventListener('click', e => {
     const tr = e.target.closest('tr[data-id]');
@@ -1755,8 +1663,6 @@ function wireEvents(){
   $('#overlay').onclick = closeDrawer;
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape'){ closeDrawer(); closeSettings(); $('#modal-pin').classList.add('hidden'); }
-    if (!state.unlocked) return;
-    state.lastActivity = Date.now();
   });
   $$('.dr-tab').forEach(el => el.onclick = () => switchTab(el.dataset.tab));
 
@@ -1765,6 +1671,12 @@ function wireEvents(){
   $('#set-provider').onchange = e => applyProvider(e.target.value, 'set');
   $('#set-ai-save').onclick = saveAISettings;
   $('#set-ai-test').onclick = testAI;
+  $('#set-ai-default').onclick = () => {
+    $('#set-provider').value = 'pollinations';
+    applyProvider('pollinations', 'set');
+    $('#set-key').value = '';
+    $('#set-ai-msg').innerHTML = '<span style="color:var(--tx2)">↩️ คืนค่าเป็น AI ฟรีเริ่มต้นแล้ว — กด "บันทึกการตั้งค่า AI" เพื่อยืนยัน</span>';
+  };
   $('#set-eye').onclick = () => {
     const k = $('#set-key');
     k.type = k.type === 'password' ? 'text' : 'password';
@@ -1776,21 +1688,13 @@ function wireEvents(){
     if (state.detailData && state.detail){ renderScore(state.detail, state.detailData.d, state.detailData.score); }
     if (state.detail && !state.detailData){ loadDetail(); }
   };
-  $('#set-autolock').onchange = e => {
-    state.autolock = e.target.checked;
-    savePrefs({ ...prefs(), autolock: state.autolock });
-  };
   $('#set-wipe').onclick = wipeAll;
   $('#set-chpin').onclick = () => {
     $('#modal-pin').classList.remove('hidden');
-    $('#cp-old').value = ''; $('#cp-new1').value = ''; $('#cp-new2').value = ''; $('#cp-err').textContent = '';
+    $('#cp-new1').value = ''; $('#cp-new2').value = ''; $('#cp-err').textContent = '';
   };
   $('#cp-save').onclick = changePIN;
   $('#cp-cancel').onclick = () => $('#modal-pin').classList.add('hidden');
-
-  // activity tracking
-  ['click','keydown','mousemove','touchstart'].forEach(ev =>
-    document.addEventListener(ev, () => { if (state.unlocked) state.lastActivity = Date.now(); }, { passive:true }));
 
   window.addEventListener('resize', () => {
     if (state.drawerTab === 'score' && state.detailData && !$('#drawer').classList.contains('hidden')){
