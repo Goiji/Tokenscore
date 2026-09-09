@@ -501,7 +501,8 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
   <footer>
     <b>⚠️ คำเตือนความเสี่ยง:</b> คะแนนและบทวิเคราะห์ทั้งหมดคำนวณจากข้อมูลราคาย้อนหลังและโมเดล AI — <b>ไม่ใช่คำแนะนำการลงทุน</b>
     คริปโตเคอร์เรนซีมีความเสี่ยงสูง คุณอาจสูญเสียเงินทั้งหมด โปรดศึกษาด้วยตัวเองและลงทุนเท่าที่รับความเสี่ยงได้<br>
-    ข้อมูลตลาด: CoinGecko (สาธารณะ, อาจล่าช้า) • AI เริ่มต้น: Pollinations (บริการฟรี ไม่ต้องมีคีย์; ผู้ใช้ที่มีคีย์ส่วนตัวสามารถใส่คีย์ OpenAI / OpenRouter / Groq ในตั้งค่า โดยคีย์จะถูกเข้ารหัส AES-256 ในเครื่องของคุณเท่านั้น) • อัปเดตอัตโนมัติทุก 90 วินาที
+    ข้อมูลตลาด: CoinGecko (สาธารณะ, อาจล่าช้า) • AI เริ่มต้น: Pollinations (บริการฟรี ไม่ต้องมีคีย์; ผู้ใช้ที่มีคีย์ส่วนตัวสามารถใส่คีย์ OpenAI / OpenRouter / Groq ในตั้งค่า โดยคีย์จะถูกเข้ารหัส AES-256 ในเครื่องของคุณเท่านั้น) •
+    อัปเดตอัตโนมัติทุก 2 ชั่วโมง — ถ้าโหลดไม่สำเร็จ ระบบจะ<b>คงข้อมูลชุดล่าสุดที่โหลดสำเร็จไว้</b> แล้วลองใหม่เอง (เก็บข้อมูลสำรองไว้ในเครื่องของคุณเท่านั้น)
   </footer>
 </div>
 
@@ -655,7 +656,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
    TokenScore Core Engine & Early Buy Scanner
    ================================================== */
 const CG = 'https://api.coingecko.com/api/v3';
-const LS = { pin:'ts_pin_v1', vault:'ts_vault_v1', prefs:'ts_prefs_v1', usage:'ts_usage_v1' };
+const LS = { pin:'ts_pin_v1', vault:'ts_vault_v1', prefs:'ts_prefs_v1', usage:'ts_usage_v1', cache:'ts_cache_v1' };
 const AI_LIMIT_HOUR = 12;
 const AI_LIMIT_FREE_HOUR = 20;
 const PROVIDERS = {
@@ -701,6 +702,13 @@ function fmtPrice(n, rate=1){
 const CUR = { USD:{sym:'$', rate:1}, THB:{sym:'฿', rate:1} };
 function pctCls(v){ return v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'flat'; }
 function pctTxt(v){ return (v>0?'+':'') + round(v,1) + '%'; }
+function fmtDT(ts){
+  const d = new Date(ts);
+  const t = d.toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
+  return new Date().toDateString() === d.toDateString()
+    ? t + ' น.'
+    : d.toLocaleDateString('th-TH', { day:'numeric', month:'short' }) + ' ' + t + ' น.';
+}
 
 function colorForScore(s){
   if (s >= 75) return '#2dd4a7';
@@ -811,6 +819,7 @@ const state = {
   rate: 1,
   markets: [],
   global: null,
+  lastGoodTs: null,           // เวลาที่โหลดข้อมูลสำเร็จล่าสุด (ใช้แสดงบน UI ตอนโหลดใหม่ไม่สำเร็จ)
   mode: 'early',               // 'early' | 'acc30' | 'all' | 'squeeze' | 'reversal' | 'oversold' | 'momentum'
   sparkRange: '7d',            // ช่วงเวลาของกราฟราคาในตาราง: '7d' | '30d'
   acc30: new Map(),            // id → { ts, m } โมเดลฐานสะสมพลัง 30 วัน (จาก OHLC 30 วัน)
@@ -1346,22 +1355,49 @@ async function loadMarkets(){
     vs_currency:'usd', order:'market_cap_desc', per_page:50, page:1,
     sparkline:true, price_change_percentage:'1h,24h,7d,14d,30d'
   });
-  if (Array.isArray(data)){
-    // คำนวณอินดิเคเตอร์และคะแนนต้นน้ำสำหรับทุกเหรียญทันที
-    data.forEach(c => {
-      const sp = c.sparkline_in_7d && c.sparkline_in_7d.price;
-      c._analysis = analyzeSparkline(sp, c);
-      c._earlyScore = c._analysis ? c._analysis.earlyBuyScore : 0;
-      c._quickScore = quickScore(c);
-      c._isStable = isStableCoin(c);
-      // คะแนนสะสมพลัง 30 วัน (ถ้ามีข้อมูล OHLC 30 วันค้างไว้ในแคช — recompute ด้วย % เปลี่ยนแปลงล่าสุด)
-      const am = state.acc30.get(c.id);
-      c._accM = am ? am.m : null;
-      c._acc = am ? acc30Score(c, am.m) : null;
-    });
-  }
+  if (Array.isArray(data)) enrichMarkets(data);
   state.markets = data || [];
   return state.markets;
+}
+/* ---- คำนวณอินดิเคเตอร์/คะแนนทุกชนิดให้เหรียญในลิสต์ ---- */
+function enrichMarkets(data){
+  data.forEach(c => {
+    const sp = c.sparkline_in_7d && c.sparkline_in_7d.price;
+    c._analysis = analyzeSparkline(sp, c);
+    c._earlyScore = c._analysis ? c._analysis.earlyBuyScore : 0;
+    c._quickScore = quickScore(c);
+    c._isStable = isStableCoin(c);
+    // คะแนนสะสมพลัง 30 วัน (ถ้ามีข้อมูล OHLC 30 วันค้างไว้ในแคช — recompute ด้วย % เปลี่ยนแปลงล่าสุด)
+    const am = state.acc30.get(c.id);
+    c._accM = am ? am.m : null;
+    c._acc = am ? acc30Score(c, am.m) : null;
+  });
+  return data;
+}
+
+/* ---- แคชข้อมูลชุดล่าสุดที่โหลดสำเร็จ (เก็บในเครื่อง — กันหน้าขาวเวลา CoinGecko ล่ม) ---- */
+function cacheMarkets(){
+  try {
+    const slim = state.markets.map(c => {
+      const o = {};
+      for (const k in c) if (k.charAt(0) !== '_') o[k] = c[k];
+      return o;
+    });
+    store.set(LS.cache, JSON.stringify({ ts: state.lastGoodTs, thb: CUR.THB.rate, global: state.global, markets: slim }));
+  } catch(e){}
+}
+function loadCachedMarkets(){
+  try {
+    const d = JSON.parse(store.get(LS.cache) || 'null');
+    if (d && Array.isArray(d.markets) && d.markets.length){
+      if (d.thb && d.thb > 1) CUR.THB.rate = d.thb;
+      if (d.global) state.global = d.global;
+      state.markets = enrichMarkets(d.markets);
+      state.lastGoodTs = d.ts || Date.now();
+      return d;
+    }
+  } catch(e){}
+  return null;
 }
 async function loadGlobal(){
   const data = await cgFetch('/global', {});
@@ -2594,8 +2630,20 @@ async function boot(){
   } catch(e){}
   state.rate = CUR[state.currency].rate;
 
+  // แสดงข้อมูลสำรอง (ชุดล่าสุดที่โหลดสำเร็จจากครั้งก่อน) ทันทีถ้ามี — กันหน้าขาวถ้าเน็ต/CoinGecko ล่มตอนเปิดหน้า
+  const cached = loadCachedMarkets();
+  if (cached && state.markets.length){
+    state.rate = CUR[state.currency].rate;
+    renderOverview();
+    renderSpotlight();
+    renderAccSpotlight();
+    updateCounts();
+    renderTable();
+    ensureAcc30Data();
+    $('#last-update').textContent = 'อัปเดต: ' + fmtDT(state.lastGoodTs) + ' (ข้อมูลล่าสุดที่โหลดสำเร็จ • กำลังตรวจสอบข้อมูลใหม่...)';
+  }
+
   await refreshAll();
-  startAutoRefresh();
 }
 
 function updateAIStatus(){
@@ -2616,35 +2664,69 @@ function applyProvider(key, target='set'){
   }
 }
 
+/* ---- รอบการอัปเดตอัตโนมัติ ----
+   • โหลดสำเร็จ → รอ 2 ชั่วโมง แล้วอัปเดตใหม่
+   • โหลดไม่สำเร็จแต่ยังมีข้อมูลเดิม → คงข้อมูลเดิมไว้ แล้วลองใหม่ใน 15 นาที
+   • ยังไม่มีข้อมูลเลย → ลองใหม่ทุก 90 วินาทีจนกว่าจะสำเร็จ                        */
+const REFRESH_OK_MS = 2*60*60*1000;
+const REFRESH_FAIL_RETRY_MS = 15*60*1000;
+const REFRESH_EMPTY_RETRY_MS = 90*1000;
+let refreshing = false;
+let refreshTimer = null;
+let nextRefreshAt = 0;
+
+function scheduleNextRefresh(delayMs){
+  if (refreshTimer) clearTimeout(refreshTimer);
+  nextRefreshAt = Date.now() + delayMs;
+  refreshTimer = setTimeout(() => {
+    refreshTimer = null;
+    if (document.hidden) return; // แท็บถูกซ่อน → รอกลับมาดูแล้วโหลดทันที (จัดการที่ visibilitychange)
+    refreshAll();
+  }, delayMs);
+}
+
 async function refreshAll(){
+  if (!state.unlocked || refreshing) return;
+  refreshing = true;
   const btn = $('#btn-refresh');
-  btn.disabled = true;
+  if (btn) btn.disabled = true;
   try {
-    await Promise.all([loadMarkets(), loadGlobal()]);
+    const [mk, gl] = await Promise.allSettled([loadMarkets(), loadGlobal()]);
+    if (mk.status === 'rejected') throw mk.reason;         // ตลาดล้ม = ถือว่ารอบนี้ล้ม (คงข้อมูลเดิมไว้)
+    state.lastGoodTs = Date.now();
     state.rate = CUR[state.currency].rate;
     renderOverview();
     renderSpotlight();
     renderAccSpotlight();
     updateCounts();
     renderTable();
+    cacheMarkets();
     ensureAcc30Data();
-    $('#last-update').textContent = 'อัปเดต: ' + new Date().toLocaleTimeString('th-TH') + ' (ทุก 90 วิ)';
+    $('#last-update').textContent = 'อัปเดต: ' + fmtDT(state.lastGoodTs) + ' (อัตโนมัติทุก 2 ชม.)';
     $('#banner-err').classList.add('hidden');
+    scheduleNextRefresh(REFRESH_OK_MS);
   } catch(e){
+    const hasData = state.markets.length > 0;
+    const retryMs = hasData ? REFRESH_FAIL_RETRY_MS : REFRESH_EMPTY_RETRY_MS;
+    const retryTxt = hasData ? Math.round(retryMs/60000) + ' นาที' : Math.round(retryMs/1000) + ' วินาที';
+    if (hasData){
+      $('#banner-err').innerHTML = '⚠️ โหลดข้อมูลใหม่ไม่สำเร็จ (' + esc(e.message) + ') — '
+        + '<b>ยังคงแสดงข้อมูลชุดล่าสุดที่โหลดสำเร็จไว้</b> (อัปเดตล่าสุด: ' + (state.lastGoodTs ? fmtDT(state.lastGoodTs) : '—') + ') '
+        + '• จะลองใหม่อัตโนมัติในอีก ' + retryTxt
+        + ' <button class="btn small" id="btn-retry-now">🔄 ลองใหม่ตอนนี้</button>';
+    } else {
+      $('#banner-err').innerHTML = '⚠️ โหลดข้อมูลตลาดไม่สำเร็จ (' + esc(e.message) + ') — อาจติด rate limit ของ CoinGecko '
+        + '• จะลองใหม่อัตโนมัติในอีก ' + retryTxt
+        + ' <button class="btn small" id="btn-retry-now">🔄 ลองใหม่ตอนนี้</button>';
+    }
     $('#banner-err').classList.remove('hidden');
-    $('#banner-err').innerHTML = '⚠️ โหลดข้อมูลตลาดไม่สำเร็จ (' + esc(e.message) + ') — อาจติด rate limit ของ CoinGecko จะลองใหม่ใน 90 วินาที';
+    const rb = $('#btn-retry-now');
+    if (rb) rb.onclick = () => refreshAll();
+    scheduleNextRefresh(retryMs);
   } finally {
-    btn.disabled = false;
+    refreshing = false;
+    if (btn) btn.disabled = false;
   }
-}
-
-let autoTimer = null;
-function startAutoRefresh(){
-  if (autoTimer) clearInterval(autoTimer);
-  autoTimer = setInterval(() => {
-    if (!state.unlocked || document.hidden) return;
-    refreshAll();
-  }, 90000);
 }
 
 /* ---------------- Settings & PIN ---------------- */
@@ -2763,7 +2845,7 @@ function wipeAll(){
   if (!confirm('ลบข้อมูลทั้งหมดในเครื่องนี้จริงหรือ?\n\nจะลบ PIN และคีย์ AI ที่บันทึกไว้ (คีย์ที่เว็บผู้ให้บริการยังอยู่)')){
     return;
   }
-  store.del(LS.pin); store.del(LS.vault); store.del(LS.prefs); store.del(LS.usage); store.del('ts_public_ai_v1'); store.del('ts_welcome');
+  store.del(LS.pin); store.del(LS.vault); store.del(LS.prefs); store.del(LS.usage); store.del(LS.cache); store.del('ts_public_ai_v1'); store.del('ts_welcome');
   location.reload();
 }
 
@@ -2882,6 +2964,12 @@ function wireEvents(){
   $('#overlay').onclick = closeDrawer;
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape'){ closeDrawer(); closeSettings(); $('#modal-pin').classList.add('hidden'); }
+  });
+  // ถ้าถึงรอบอัปเดตตอนแท็บถูกซ่อน → โหลดทันทีที่กลับมาดูหน้านี้
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !refreshTimer && nextRefreshAt && Date.now() >= nextRefreshAt){
+      refreshAll();
+    }
   });
   $$('.dr-tab').forEach(el => el.onclick = () => switchTab(el.dataset.tab));
 
