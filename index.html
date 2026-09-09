@@ -1525,6 +1525,10 @@ async function saveAISettings(){
     msgEl.innerHTML = '<span style="color:var(--bad)">กรุณากรอกชื่อโมเดล</span>';
     return;
   }
+  if (base && !key && !(PROVIDERS[provider] && PROVIDERS[provider].free)){
+    msgEl.innerHTML = '<span style="color:var(--bad)">ผู้ให้บริการนี้ต้องใช้คีย์ API — กรอกคีย์ของคุณ หรือเลือก Pollinations (ฟรี)</span>';
+    return;
+  }
   const ai = { base: base || '', model: model || '', key, provider };
   if (!base || !key || isFreeAI(ai)){
     // ฟรี: บันทึกแบบไม่ต้อง PIN และจำไว้สำหรับการเข้าใช้ครั้งต่อไป (เฉพาะคีย์ฟรี/ไม่มีคีย์)
