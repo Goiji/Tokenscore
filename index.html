@@ -656,7 +656,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
    TokenScore Core Engine & Early Buy Scanner
    ================================================== */
 const CG = 'https://api.coingecko.com/api/v3';
-const LS = { pin:'ts_pin_v1', vault:'ts_vault_v1', prefs:'ts_prefs_v1', usage:'ts_usage_v1', cache:'ts_cache_v1' };
+const LS = { pin:'ts_pin_v1', vault:'ts_vault_v1', prefs:'ts_prefs_v1', usage:'ts_usage_v1', cache:'ts_cache_v1', acc:'ts_acc30_v1' };
 const AI_LIMIT_HOUR = 12;
 const AI_LIMIT_FREE_HOUR = 20;
 const PROVIDERS = {
@@ -1411,20 +1411,34 @@ async function loadThbRate(){
   } catch(e){}
   return null;
 }
-async function loadOHLC(id){
+async function loadOHLC(id, opts = {}){
+  const retries = opts.retries ?? 3;
   const now = Date.now();
   const hit = state.ohlcCache.get(id);
   if (hit && now - hit.ts < 10*60*1000) return hit.data;
-  const data = await cgFetch('/coins/' + encodeURIComponent(id) + '/ohlc', { vs_currency:'usd', days:30 });
-  if (!data || data.length < 50) return null;
+  const data = await cgFetch('/coins/' + encodeURIComponent(id) + '/ohlc', { vs_currency:'usd', days:30 }, retries);
+  if (!Array.isArray(data)) throw new Error('rate limit / ไม่ได้รับข้อมูลจาก CoinGecko'); // ต่างจาก "ข้อมูลแท่งน้อย" ตรงนี้คือโดน 429 หรือถูกปฏิเสธ
+  if (data.length < 50) return null;
   state.ohlcCache.set(id, { ts: now, data });
   return data;
 }
 
-/* ---- โหลดข้อมูล 30 วันแบบ Background (ทีละเหรียญ + throttle กัน rate limit CoinGecko) ---- */
+/* ---- โหลดข้อมูล 30 วันแบบ Background (Adaptive pacing + Retry + เก็บในเครื่อง) ----
+   CoinGecko สาธารณะจำกัด ~5-15 คำขอ/นาที จึงต้อง:
+   • เว้นจังหวะทีละเหรียญ (ปรับช้าลงอัตโนมัติเมื่อเจอ 429 / เร็วขึ้นเมื่อลื่น)
+   • เหรียญที่โดน rate limit → เข้าคิวลองใหม่ (ไม่ได้หายไป 10 นาทีแบบเดิม)
+   • พักทั้งคิว 90 วิ ถ้าโดนต่อเนื่อง • โหลดเหรียญที่ผู้ใช้กำลังดูก่อน
+   • เก็บข้อมูลที่โหลดสำเร็จไว้ในเครื่อง 45 นาที → เปิดหน้าใหม่แสดงได้ทันที            */
+const ACC30_PACE = { min: 3500, max: 12000, start: 4200, cooldown: 90000, maxTries: 3, ttlMs: 45*60*1000 };
 let acc30Busy = false;
 let acc30UITimer = null;
-let acc30Attempts = 0;
+let acc30Attempts = 0;        // จำนวนครั้งที่ยิง OHLC ไปแล้ว (ใช้ปรับข้อความสถานะ)
+let acc30Delay = ACC30_PACE.start;
+let acc30ConsecFails = 0;
+let acc30PersistN = 0;
+let acc30RerunTimer = null;   // ตั้งเวลาให้คิวกลับมาลองโหลดเหรียญที่ถูกพักไว้อีกครั้ง (~5 นาที)
+const acc30RetryQueue = new Map();   // id → { nextAt, tries } — เหรียญที่โดน rate limit รอลองใหม่
+
 function queueAcc30UI(){
   if (acc30UITimer) return;
   acc30UITimer = setTimeout(() => {
@@ -1439,44 +1453,136 @@ function syncAcc30ToMarket(id){
   const rec = state.acc30.get(id);
   if (mc){ mc._accM = rec ? rec.m : null; mc._acc = rec ? acc30Score(mc, rec.m) : null; }
 }
+
+/* ---- เก็บ/กู้ข้อมูลฐาน 30 วันจากในเครื่อง (localStorage) ---- */
+function persistAcc30(){
+  try {
+    const o = {};
+    state.acc30.forEach((v, id) => { if (Date.now() - v.ts < ACC30_PACE.ttlMs) o[id] = { ts: v.ts, m: v.m }; });
+    store.set(LS.acc, JSON.stringify(o));
+  } catch(e){}
+}
+function restoreAcc30(){
+  try {
+    const o = JSON.parse(store.get(LS.acc) || 'null');
+    if (!o) return 0;
+    let n = 0;
+    for (const id in o){
+      const rec = o[id];
+      if (rec && rec.m && Date.now() - rec.ts < ACC30_PACE.ttlMs){ state.acc30.set(id, rec); n++; }
+    }
+    return n;
+  } catch(e){}
+  return 0;
+}
+
+/* ---- เหรียญตัวถัดไปที่ควรโหลด: ตามลำดับ "สิ่งที่ผู้ใช้กำลังดู" ---- */
+function passesModeFilter(c){
+  const mode = state.mode;
+  if (mode === 'all') return true;
+  if (mode === 'early') return (c._earlyScore || 0) >= 60;
+  if (mode === 'acc30') return !!(c._acc && c._acc.qualified);
+  if (mode === 'squeeze') return !!(c._analysis && c._analysis.isSqueeze);
+  if (mode === 'reversal') return !!(c._analysis && (c._analysis.isMacdGoldenCross || c._analysis.isMacdHistTurningUp));
+  if (mode === 'oversold') return !!(c._analysis && c._analysis.rsi <= 44);
+  if (mode === 'momentum') return ((c.price_change_percentage_24h ?? 0) > 3 || (c.price_change_percentage_7d_in_currency ?? 0) > 12);
+  return true;
+}
+function nextAcc30Target(){
+  const now = Date.now();
+  const cands = state.markets.filter(c => {
+    if (c._isStable) return false;
+    if (state.acc30.get(c.id)) return false;                                  // โหลดแล้ว
+    if (acc30RetryQueue.has(c.id)) return false;                              // รอลองใหม่อยู่แล้ว
+    const f = state.acc30Fail.get(c.id);
+    if (f && now - f < 10*60*1000) return false;                              // ข้อมูลจริงไม่พบ / เกินจำนวนครั้ง
+    return true;
+  });
+  if (!cands.length) return null;
+  const byCap = (a,b) => (a.market_cap_rank || 999) - (b.market_cap_rank || 999);
+  const inMode = cands.filter(passesModeFilter).sort(byCap);
+  if (inMode.length) return inMode[0].id;                                     // 1) เหรียญที่ผู้ใช้กำลังดูในโหมดนี้
+  const p30 = c => (c.price_change_percentage_30d_in_currency ?? 0);
+  const plausible = cands.filter(c => p30(c) >= -30 && p30(c) <= 25).sort(byCap);
+  if (plausible.length) return plausible[0].id;                               // 2) เหรียญที่มีโอกาสผ่านเกณฑ์ฐาน
+  return cands.sort(byCap)[0].id;                                             // 3) ที่เหลือตาม market cap
+}
+async function fetchAcc30(id){
+  try {
+    const ohlc = await loadOHLC(id, { retries: 1 });
+    if (!ohlc) return 'nodata';                                               // ข้อมูลจริงแต่แท่งน้อย
+    const m = acc30Metrics(ohlc);
+    if (!m) return 'nodata';
+    state.acc30.set(id, { ts: Date.now(), m });
+    state.acc30Fail.delete(id);
+    syncAcc30ToMarket(id);
+    return 'ok';
+  } catch(e){
+    return 'ratelimit';                                                       // 429 / เน็ตล่ม / ถูกบล็อก
+  }
+}
 async function ensureAcc30Data(){
   if (acc30Busy) return;
-  const targets = state.markets.filter(c => !c._isStable);
-  if (!targets.length) return;
+  if (!state.markets.some(c => !c._isStable)) return;
   acc30Busy = true;
   const statusEl = $('#acc-status');
-  if (statusEl){ statusEl.classList.remove('hidden'); statusEl.textContent = '⏳ 📦 30ว: 0/' + targets.length; }
-  let done = 0;
+  const total = () => state.markets.filter(c => !c._isStable).length;
+  const loaded = () => state.markets.filter(c => !c._isStable && state.acc30.get(c.id)).length;
+  const setStatus = t => { if (statusEl){ statusEl.classList.remove('hidden'); statusEl.textContent = t; } };
   try {
-    for (const c of targets){
-      const id = c.id;
-      const failedAt = state.acc30Fail.get(id);
-      if (failedAt && Date.now() - failedAt < 10*60*1000){ done++; continue; }
-      const cacheHit = state.ohlcCache.get(id);
-      const wasFresh = !!(cacheHit && Date.now() - cacheHit.ts < 10*60*1000);
-      try {
-        const ohlc = await loadOHLC(id);
-        if (ohlc){
-          const m = acc30Metrics(ohlc);
-          if (m){ state.acc30.set(id, { ts: Date.now(), m }); state.acc30Fail.delete(id); }
-          else state.acc30Fail.set(id, Date.now());
-        } else {
-          state.acc30Fail.set(id, Date.now());
-        }
-        acc30Attempts++;
-      } catch(e){
-        state.acc30Fail.set(id, Date.now());
+    while (true){
+      // 1) เหรียญจากคิว retry ที่ถึงเวลาลองใหม่แล้ว
+      let id = null;
+      for (const [rid, r] of acc30RetryQueue){
+        if (Date.now() >= r.nextAt){ id = rid; break; }
       }
-      syncAcc30ToMarket(id);
-      done++;
-      if (statusEl) statusEl.textContent = '⏳ 📦 30ว: ' + done + '/' + targets.length;
+      // 2) ถ้าไม่มี → เหรียญใหม่ตามลำดับความสำคัญ
+      if (!id) id = nextAcc30Target();
+      // 3) ไม่มีอะไรจะโหลดแล้ว — เหลือแต่รอ retry หรือจบ
+      if (!id){
+        const waits = [...acc30RetryQueue.values()].map(r => r.nextAt);
+        const nextAt = waits.length ? Math.min(...waits) : Infinity;
+        if (nextAt === Infinity) break;                                       // ครบทุกเหรียญแล้ว
+        setStatus('⏳ 📦 กราฟ 30ว: ' + loaded() + '/' + total() + ' • พักรอ rate limit ' + Math.max(1, Math.ceil((nextAt - Date.now())/1000)) + ' วิ');
+        await sleep(Math.min(5000, Math.max(400, nextAt - Date.now())));
+        continue;
+      }
+      const res = await fetchAcc30(id);
+      acc30Attempts++;
+      if (res === 'ok'){
+        acc30ConsecFails = 0;
+        acc30Delay = Math.max(ACC30_PACE.min, acc30Delay - 300);              // ลื่นดี → ค่อย ๆ เร่ง
+        acc30RetryQueue.delete(id);
+      } else if (res === 'nodata'){
+        acc30RetryQueue.delete(id);
+        state.acc30Fail.set(id, Date.now());                                  // เหรียญนี้ข้อมูลไม่พบจริง
+      } else {
+        acc30ConsecFails++;
+        acc30Delay = Math.min(ACC30_PACE.max, Math.round(acc30Delay * 1.5));  // โดน 429 → ช้าลง
+        const rec = acc30RetryQueue.get(id) || { tries: 0 };
+        rec.tries++;
+        if (rec.tries >= ACC30_PACE.maxTries){
+          acc30RetryQueue.delete(id);
+          state.acc30Fail.set(id, Date.now() - 5*60*1000);                    // พัก 5 นาที แล้วคิวจะกลับมาลองใหม่เอง
+          if (!acc30RerunTimer){
+            acc30RerunTimer = setTimeout(() => { acc30RerunTimer = null; ensureAcc30Data(); }, 5*60*1000 + 3000);
+          }
+        } else {
+          rec.nextAt = Date.now() + (acc30ConsecFails >= 3 ? ACC30_PACE.cooldown : acc30Delay * 2);
+          acc30RetryQueue.set(id, rec);
+        }
+      }
+      if (++acc30PersistN % 5 === 0) persistAcc30();
       queueAcc30UI();
-      if (!wasFresh) await sleep(1600 + Math.random()*900); // เว้นจังหวะกัน rate limit
+      setStatus('⏳ 📦 กราฟ 30ว: ' + loaded() + '/' + total());
+      await sleep(acc30Delay + Math.random()*800);
     }
   } finally {
     acc30Busy = false;
+    persistAcc30();
     if (statusEl) statusEl.classList.add('hidden');
     queueAcc30UI();
+
   }
 }
 
@@ -1895,7 +2001,7 @@ function frameBarHTML(m, big=false){
 }
 function posChipHTML(c){
   const m = c._accM;
-  if (!m) return '<span class="spark-loading" title="กำลังโหลดข้อมูล 30 วันจาก CoinGecko (ทยอยโหลดทีละเหรียญ)">⏳ …</span>';
+  if (!m) return '<span class="spark-loading" title="กำลังทยอยโหลดข้อมูล 30 วันจาก CoinGecko ทีละเหรียญ (กัน rate limit) — ดูความคืบหน้าที่สถานะ 📦 ในแถบด้านบน">⏳ …</span>';
   return frameBarHTML(m, false);
 }
 function accChipHTML(c){
@@ -1961,7 +2067,7 @@ function sparkCellHTML(c){
   const sd = sparkData(c);
   if (!sd){
     return state.sparkRange === '30d'
-      ? '<span class="spark-loading" title="กำลังโหลดข้อมูลราคา 30 วันจาก CoinGecko (ทยอยโหลดทีละเหรียญ)">⏳ โหลด 30ว…</span>'
+      ? '<span class="spark-loading" title="กำลังทยอยโหลดกราฟ 30 วันจาก CoinGecko ทีละเหรียญ (จำกัด ~10 คำขอ/นาที — ประมาณ 3-6 นาทีจึงครบ) ดูความคืบหน้าได้ที่สถานะ 📦 ในแถบด้านบน">⏳ คิวโหลด 30ว…</span>'
       : '<span class="spark-none">—</span>';
   }
   const { prices, period } = sd;
@@ -2040,13 +2146,7 @@ function renderTable(){
     if (state.filterOnlyHighScore && (c._earlyScore || 0) < 70) return false;
 
     // Mode filters
-    if (state.mode === 'early') return (c._earlyScore || 0) >= 60;
-    if (state.mode === 'acc30') return !!(c._acc && c._acc.qualified);
-    if (state.mode === 'squeeze') return c._analysis && c._analysis.isSqueeze;
-    if (state.mode === 'reversal') return c._analysis && (c._analysis.isMacdGoldenCross || c._analysis.isMacdHistTurningUp);
-    if (state.mode === 'oversold') return c._analysis && c._analysis.rsi <= 44;
-    if (state.mode === 'momentum') return (c.price_change_percentage_24h ?? 0) > 3 || (c.price_change_percentage_7d_in_currency ?? 0) > 12;
-    return true;
+    return passesModeFilter(c);
   });
 
   // Pre-pass: % เปลี่ยนแปลงของกราฟที่แสดงอยู่ (ใช้เรียงคอลัมน์เทรนด์ 7/30 วัน)
@@ -2159,6 +2259,9 @@ function openDrawer(coinId){
   $('#dr-acc-checklist').innerHTML = '';
   $('#dr-acc-levels').innerHTML = '';
   $('#dr-acc-note').textContent = '';
+  $('#dr-early-score-text').textContent = '—';
+  $('#dr-checklist').innerHTML = '';
+  $('#dr-levels-grid').innerHTML = '';
   loadDetail();
 }
 
@@ -2192,7 +2295,15 @@ async function loadDetail(){
     state.detailData = { d, score, acc, accS };
     renderScore(coin, d, score);
   } catch(e){
-    $('#ring-area').innerHTML = '<span class="hint">⚠️ โหลดข้อมูลไม่สำเร็จ (อาจติด rate limit ของ CoinGecko) — ลองใหม่ใน 1 นาที</span>';
+    // โหลด OHLC ไม่สำเร็จ (เช่น rate limit) — ถ้ามีข้อมูลฐาน 30 วันค้างไว้ในเครื่อง ยังแสดงโครงสร้าง+แผนเทรดได้
+    const rec = state.acc30.get(coin.id);
+    if (rec && rec.m){
+      state.detailData = { d: null, score: null, acc: rec.m, accS: acc30Score(coin, rec.m) };
+      renderAccDrawerBox(coin, null);
+      $('#ring-area').innerHTML = '<span class="hint">⚠️ โหลดกราฟ/อินดิเคเตอร์ล่าสุดไม่สำเร็จ (' + esc(e.message) + ') — แสดง<strong>โครงสร้างฐาน 30 วัน</strong>จากข้อมูลล่าสุดที่โหลดสำเร็จไว้ (อายุ ' + Math.round((Date.now() - rec.ts)/60000) + ' นาที)</span>';
+    } else {
+      $('#ring-area').innerHTML = '<span class="hint">⚠️ โหลดข้อมูลไม่สำเร็จ (' + esc(e.message) + ') — อาจติด rate limit ของ CoinGecko ลองปิด-เปิดหน้าต่างนี้อีกครั้งใน 1-2 นาที</span>';
+    }
   }
 }
 
@@ -2631,6 +2742,7 @@ async function boot(){
   state.rate = CUR[state.currency].rate;
 
   // แสดงข้อมูลสำรอง (ชุดล่าสุดที่โหลดสำเร็จจากครั้งก่อน) ทันทีถ้ามี — กันหน้าขาวถ้าเน็ต/CoinGecko ล่มตอนเปิดหน้า
+  restoreAcc30();   // ข้อมูลฐาน 30 วันที่โหลดสำเร็จไว้ก่อนหน้า (เก็บในเครื่อง ≤45 นาที)
   const cached = loadCachedMarkets();
   if (cached && state.markets.length){
     state.rate = CUR[state.currency].rate;
@@ -2845,7 +2957,7 @@ function wipeAll(){
   if (!confirm('ลบข้อมูลทั้งหมดในเครื่องนี้จริงหรือ?\n\nจะลบ PIN และคีย์ AI ที่บันทึกไว้ (คีย์ที่เว็บผู้ให้บริการยังอยู่)')){
     return;
   }
-  store.del(LS.pin); store.del(LS.vault); store.del(LS.prefs); store.del(LS.usage); store.del(LS.cache); store.del('ts_public_ai_v1'); store.del('ts_welcome');
+  store.del(LS.pin); store.del(LS.vault); store.del(LS.prefs); store.del(LS.usage); store.del(LS.cache); store.del(LS.acc); store.del('ts_public_ai_v1'); store.del('ts_welcome');
   location.reload();
 }
 
@@ -3020,7 +3132,14 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && document
 }
 
 if (typeof window !== 'undefined'){
-  window.TS = { sma, ema, rsi, macd, bollinger, atr, analyze, computeScore, quickScore, analyzeSparkline, acc30Metrics, acc30Score, sparkHD, frameBarHTML, isStableCoin, clamp, gradeFor };
+  window.TS = { sma, ema, rsi, macd, bollinger, atr, analyze, computeScore, quickScore, analyzeSparkline, acc30Metrics, acc30Score, sparkHD, frameBarHTML, isStableCoin, clamp, gradeFor,
+    acc30Pace: ACC30_PACE,   // ปรับค่า pacing ได้ (ใช้ในการทดสอบ)
+    acc30Debug: () => ({ delay: acc30Delay, loaded: state.acc30.size, retryQueue: acc30RetryQueue.size, fails: state.acc30Fail.size, attempts: acc30Attempts, busy: acc30Busy }) };
+}
+</script>
+</body>
+</html>
+0Score, sparkHD, frameBarHTML, isStableCoin, clamp, gradeFor };
 }
 </script>
 </body>
