@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0a1222">
 <meta name="description" content="TokenScore — สแกนหาเหรียญต้นน้ำ (Early Buy Setup) ราคายังไม่พุ่ง + โหมดเพิ่งเริ่มสะสมพลัง 30 วัน (ฐาน -22% ถึง +15% โซนล่าง 15-48% ของกรอบ) พร้อมอินดิเคเตอร์บอกจังหวะซื้อ (RSI, MACD, Bollinger Squeeze) + AI วิเคราะห์แบบนักลงทุนมืออาชีพ ฟรี">
 <meta property="og:title" content="TokenScore ⚡ สแกนเหรียญต้นน้ำ + ฐานสะสมพลัง 30 วัน + คะแนนคริปโต + AI วิเคราะห์มือโปร">
-<meta property="og:description" content="เรดาร์จับเหรียญราคายังไม่พุ่ง แต่อินดิเคเตอร์ส่งสัญญาณสะสมพลังเข้าซื้อ + โหมดเหรียญเพิ่งเริ่มสะสมพลัง 30 วัน พร้อม AI วางแผน Stop Loss / Take Profit ฟรี">
+<meta property="og:description" content="เรดาร์จับเหรียญราคายังไม่พุ่งที่น่าจับตา แต่อินดิเคเตอร์ส่งสัญญาณสะสมพลัง + โหมดเหรียญเพิ่งเริ่มสะสมพลัง 30 วัน พร้อม AI วิเคราะห์กรอบ Stop Loss / Take Profit (เชิงการศึกษา)">
 <meta property="og:type" content="website">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src https:; base-uri 'none'; form-action 'none'">
@@ -386,7 +386,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
 <div id="app" class="hidden">
   <header>
     <div class="logo"><span class="mark">⚡</span><h1>Token<em>Score</em></h1></div>
-    <span class="pill" id="tagline">🎯 เรดาร์เหรียญต้นน้ำ + AI วางแผนเทรด — ฟรี</span>
+    <span class="pill" id="tagline">🎯 เรดาร์เหรียญน่าจับตา + AI วิเคราะห์ — ฟรี</span>
     <span class="pill" id="status-ai">AI: —</span>
     <div class="spacer"></div>
     <button class="btn icon" id="btn-refresh" title="รีเฟรชข้อมูลตลาด">🔄</button>
@@ -419,7 +419,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
       <div class="radar-title-group">
         <div class="radar-icon">🎯</div>
         <div>
-          <h2>เรดาร์เหรียญต้นน้ำแนะนำ (Early Buy Radar)</h2>
+          <h2>เรดาร์เหรียญต้นน้ำที่น่าจับตา (Early Watch Radar)</h2>
           <p>คัดกรองเหรียญที่ราคายังไม่พุ่ง + อินดี้หลายตัว (RSI, MACD, Bollinger Squeeze) ส่งสัญญาณสะสมพลัง</p>
         </div>
       </div>
@@ -536,7 +536,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
       <!-- Early Buy Assessment Section -->
       <div class="dr-early-box" id="dr-early-box">
         <div class="dr-early-head">
-          <h3>🎯 การประเมินจังหวะเข้าซื้อต้นน้ำ (Early Entry Setup)</h3>
+          <h3>🎯 ประเมินสัญญาณต้นน้ำ (Early Signal Check)</h3>
           <span class="dr-early-score" id="dr-early-score-text">—</span>
         </div>
         <div class="dr-checklist" id="dr-checklist"></div>
@@ -732,11 +732,11 @@ function gradeFor(s){
   return 'F';
 }
 function signalFor(s){
-  if (s >= 75) return { t:'ซื้ออย่างมั่นใจ (Strong Buy)', c:'#2dd4a7' };
-  if (s >= 62) return { t:'ซื้อ / สะสม (Buy)', c:'#8ee06a' };
-  if (s >= 48) return { t:'ถือ / รอจังหวะ (Neutral)', c:'#f5b63f' };
-  if (s >= 35) return { t:'ลดสัดส่วน (Sell)', c:'#f79a4e' };
-  return { t:'หลีกเลี่ยง (Strong Sell)', c:'#f4576e' };
+  if (s >= 75) return { t:'น่าจับตาเป็นพิเศษ (Strong)', c:'#2dd4a7' };
+  if (s >= 62) return { t:'น่าจับตา (Watch)', c:'#8ee06a' };
+  if (s >= 48) return { t:'เป็นกลาง (Neutral)', c:'#f5b63f' };
+  if (s >= 35) return { t:'สัญญาณอ่อนแรง (Weak)', c:'#f79a4e' };
+  return { t:'ระวังเป็นพิเศษ (Very Weak)', c:'#f4576e' };
 }
 function isStableCoin(c){
   const sym = (c.symbol || '').toLowerCase();
@@ -1659,7 +1659,7 @@ function buildAIPrompt(coin, d, score){
 ` : '';
 
   return `คุณคือผู้จัดการกองทุนคริปโตและนักวางกลยุทธ์เทรดระดับมืออาชีพ (15+ ปีประสบการณ์)
-ให้วิเคราะห์เหรียญนี้อย่างเฉียบคม เน้นตอบโจทย์: "ราคายังไม่พุ่งหรือวิ่งไปแล้ว? และอินดิเคเตอร์บอกจังหวะซื้อต้นน้ำหรือไม่?"
+ให้วิเคราะห์เหรียญนี้อย่างเฉียบคม เน้นตอบโจทย์: "ราคายังไม่พุ่งหรือวิ่งไปแล้ว? และอินดิเคเตอร์ส่งสัญญาณน่าจับตาหรือไม่?"
 
 ข้อมูลสินทรัพย์:
 - เหรียญ: ${coin.name} (${coin.symbol.toUpperCase()}) Market Cap Rank: #${coin.market_cap_rank}
@@ -1678,14 +1678,14 @@ function buildAIPrompt(coin, d, score){
 ${accBlock}
 เขียนบทวิเคราะห์ภาษาไทย กระชับ มีเหตุมีผล ชัดเจน ไม่เกิน 450 คำ ในรูปแบบ Markdown:
 **🎯 สถานะจังหวะราคา (ต้นน้ำ vs วิ่งไปแล้ว)** — สรุปว่าราคายังสด/เป็นจังหวะสะสมต้นน้ำ หรือพุ่งไปแล้วและมีความเสี่ยงไล่ราคา (FOMO) — หากมีข้อมูลฐาน 30 วัน ให้ประเมินด้วยว่าเป็น "ฐานสะสมพลัง 30 วัน" จริงหรือไม่ (ฐาน -22% ถึง +15% • โซนล่าง 15-48% • เพิ่งเริ่มยก Low)
-**📈 สัญญาณอินดิเคเตอร์คอนเวอร์เจนซ์** — อินดี้ตัวไหนบอกให้ซื้อ (RSI, MACD, BB Squeeze, SMA)
+**📈 สัญญาณอินดิเคเตอร์คอนเวอร์เจนซ์** — อินดี้ตัวไหนส่งสัญญาณน่าจับตา (RSI, MACD, BB Squeeze, SMA)
 **🎯 กรอบราคาปฏิบัติการ (${cur})**
 - โซนเข้าซื้อสะสม (Entry Zone)
-- จุดตัดขาดทุนที่แนะนำ (Stop Loss — คำนวณจากแนวรับ Bollinger / ATR)
+- จุด Stop Loss อ้างอิง (คำนวณจากแนวรับ Bollinger / ATR)
 - เป้าหมายทำกำไร (TP1 และ TP2)
 - Risk/Reward Ratio
-**💡 กลยุทธ์การแบ่งไม้และจัดการความเสี่ยง** — แนะนำ Position Sizing แบบกองทุน
-**🏁 สรุปคำแนะนำ** — ซื้อ / ทยอยสะสม / ถือรอ / ไม่ควรไล่ราคา พร้อมเกรดความน่าสนใจ`;
+**💡 แนวทางจัดการความเสี่ยง** — ตัวอย่าง Position Sizing แบบกองทุน (เชิงการศึกษา)
+**🏁 สรุปมุมมองโดยรวม** — น่าจับตา / ทยอยศึกษา / ถือรอ / ไม่ควรไล่ราคา พร้อมเกรดความน่าสนใจ (ย้ำว่าเป็นข้อมูลเชิงการศึกษา)`;
 }
 
 function renderMD(text){
@@ -1734,7 +1734,7 @@ function ruleAnalysis(coin, d, score){
     L.push(`ราคายังไม่พุ่งเกินไป (24ชม. ${pctTxt(coin.price_change_percentage_24h ?? 0)}, 7วัน ${pctTxt(coin.price_change_percentage_7d_in_currency ?? 0)}) ขณะที่อินดิเคเตอร์กำลังเริ่มฟื้นตัวและสะสมพลัง`);
   } else if (coin.price_change_percentage_24h > 12 || coin.price_change_percentage_7d_in_currency > 35 || (d.r14 && d.r14 > 70)){
     L.push(`⚠️ **ราคาพุ่งขึ้นมาระยะหนึ่งแล้ว (Overextended — ระวังการไล่ราคา)**`);
-    L.push(`ราคาปรับขึ้นแรงแล้วและ RSI อยู่ในโซนสูง (${round(d.r14,1)}) การเข้าซื้อตรงนี้มีความเสี่ยงถูกขายทำกำไร แนะนำรอจังหวะย่อตัว (Pullback) บริเวณแนวรับ`);
+    L.push(`ราคาปรับขึ้นแรงแล้วและ RSI อยู่ในโซนสูง (${round(d.r14,1)}) การเข้าซื้อตรงนี้มีความเสี่ยงถูกขายทำกำไร โดยทั่วไปนักวิเคราะห์มักรอจังหวะย่อตัว (Pullback) บริเวณแนวรับ`);
   } else {
     L.push(`🟡 **ราคากำลังสร้างฐานสะสมพลัง (Consolidation Phase)**`);
     L.push(`ราคาวิ่งในกรอบไซด์เวย์ รอการเบรกเอาท์เพื่อยืนยันรอบใหม่`);
@@ -1782,11 +1782,11 @@ function ruleAnalysis(coin, d, score){
   L.push(`- **เป้าหมาย Take Profit 1:** ${fmtPrice(tp1, rate)} ${cur} (R:R ~1:1.6)`);
   L.push(`- **เป้าหมาย Take Profit 2:** ${fmtPrice(tp2, rate)} ${cur} (R:R ~1:2.8)`);
 
-  L.push('**💡 กลยุทธ์การลงทุน**');
+  L.push('**💡 แนวทางจัดการความเสี่ยง (ตัวอย่างเชิงการศึกษา)**');
   if (earlyScore >= 75){
     L.push('แบ่งไม้สะสม 40% ที่ราคาปัจจุบัน และตั้งรับอีก 60% ที่บริเวณโซนแนวรับ Stop loss ชัดเจน');
   } else if (coin.price_change_percentage_24h > 12 || (d.r14 && d.r14 > 70)){
-    L.push('หลีกเลี่ยงการทุ่มซื้อไม้เดียว รอให้ราคาย่อตัวลงมาแตะเส้น SMA20 หรือแนวรับก่อนจึงพิจารณา');
+    L.push('แนวทางทั่วไป: ไม่ทุ่มไม้เดียว — มักรอให้ราคาย่อตัวลงมาแตะเส้น SMA20 หรือแนวรับก่อนจึงพิจารณา');
   } else {
     L.push('ทยอยสะสมแบบ Dollar-Cost Averaging (DCA) และรอสัญญาณเบรกกรอบ Bollinger ชัดเจน');
   }
@@ -1876,7 +1876,7 @@ function renderSpotlight(){
         <div class="spot-top">
           <img class="spot-img" src="${esc(c.image)}" alt="" loading="lazy">
           <div class="spot-info">
-            <div class="spot-nm">${esc(c.name)} <span class="badge ${score>=80?'early-tag':'squeeze-tag'}">#${idx+1} ต้นน้ำ</span></div>
+            <div class="spot-nm">${esc(c.name)} <span class="badge ${score>=80?'early-tag':'squeeze-tag'}">#${idx+1} น่าจับตา</span></div>
             <div class="spot-sy">${esc(c.symbol.toUpperCase())} • Market Cap #${c.market_cap_rank}</div>
           </div>
           <div class="spot-score-box">
@@ -1897,7 +1897,7 @@ function renderSpotlight(){
 
         <div class="spot-desc">${esc(an ? an.summary : 'สัญญาณสะสมพลังน่าจับตา')}</div>
 
-        <button class="btn early spot-btn" onclick="openDrawer('${esc(c.id)}')">⚡ วิเคราะห์จุดเข้า &amp; Stop Loss</button>
+        <button class="btn early spot-btn" onclick="openDrawer('${esc(c.id)}')">⚡ วิเคราะห์กรอบราคา &amp; แผนเทรด</button>
       </div>`;
   }).join('');
 }
@@ -2527,7 +2527,7 @@ function renderAccDrawerBox(coin, d){
     <div class="level-card"><div class="lt">เป้า TP2 • High 30ว (${round(rr2,1)}R)</div><div class="lv" style="color:#c084fc">${fmtPrice(tp2, rate)}</div></div>`;
 
   $('#dr-acc-note').innerHTML = `แผนเทรดอิงโครงสร้างฐาน 30 วัน: <b>SL</b> อยู่ใต้แนวรับฐาน (ต่ำกว่า Low 7 วัน − 0.8 ATR) • <b>TP2</b> ชี้เป้าที่ High 30 วัน •
-    แนะนำความเสี่ยงต่อไม้ ≤ 1–2% ของพอร์ต แบ่งไม้เข้า 2 ส่วนในโซน Entry และตัดไม้ทั้งหมดหากปิดแท่ง 4 ชม. ต่ำกว่า SL —
+    ตัวอย่างแนวทาง: ความเสี่ยงต่อไม้ ≤ 1–2% ของพอร์ต แบ่งไม้เข้า 2 ส่วนในโซน Entry และตัดไม้ทั้งหมดหากปิดแท่ง 4 ชม. ต่ำกว่า SL —
     <b>ไม่ใช่คำแนะนำการลงทุน</b>`;
 }
 
@@ -2538,17 +2538,17 @@ function renderAIPanel(coin, d, score){
   const provName = PROVIDERS[state.ai.provider] ? PROVIDERS[state.ai.provider].name : 'กำหนดเอง';
   box.innerHTML = `
     <p class="hint" style="margin:0 0 10px">${free ? 'โหมด AI ฟรี' : 'โหมดคีย์ของคุณเอง'} — ${esc(provName)} • โมเดล ${esc(state.ai.model)} • คงเหลือ ${left} ครั้ง/ชม. ${free ? '• ' + AI_TIP : ''}</p>
-    <button class="btn early" id="ai-run" ${left <= 0 || !httpsOK() ? 'disabled' : ''}>🧠 วิเคราะห์กลยุทธ์ต้นน้ำด้วย AI (มุมมองนักลงทุนอาชีพ)</button>
+    <button class="btn early" id="ai-run" ${left <= 0 || !httpsOK() ? 'disabled' : ''}>🧠 วิเคราะห์ด้วย AI (มุมมองนักวิเคราะห์ • เชิงการศึกษา)</button>
     <button class="btn small" id="ai-go-settings" style="margin-left:6px">⚙️ ตั้งค่า AI</button>`;
   $('#ai-out').classList.add('hidden');
   const gs = $('#ai-go-settings'); if (gs) gs.onclick = () => openSettings();
   $('#ai-run').onclick = async () => {
     const btn = $('#ai-run');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> AI กำลังวิเคราะห์จุดเข้า & SL... (10–60 วิ)';
+    btn.innerHTML = '<span class="spinner"></span> AI กำลังวิเคราะห์... (10–60 วิ)';
     try {
       const txt = await callAI([
-        { role:'system', content:'คุณคือนักวิเคราะห์คริปโตและผู้จัดการกองทุนมืออาชีพ ตอบเป็นภาษาไทย ใช้ Markdown ตามหัวข้อที่กำหนด เน้นประเมินจุดเข้าซื้อต้นน้ำที่ได้เปรียบ และเตือนไม่ให้ไล่ราคา' },
+        { role:'system', content:'คุณคือนักวิเคราะห์คริปโตมืออาชีพ ตอบเป็นภาษาไทย ใช้ Markdown ตามหัวข้อที่กำหนด เน้นประเมินว่าเป็นจังหวะต้นน้ำที่น่าจับตาหรือไม่ เตือนไม่ให้ไล่ราคา และย้ำท้ายบทวิเคราะห์ทุกครั้งว่าเป็นข้อมูลเชิงการศึกษา ไม่ใช่คำแนะนำการลงทุน' },
         { role:'user', content: buildAIPrompt(coin, d, score) }
       ]);
       const out = $('#ai-out');
@@ -2561,7 +2561,7 @@ function renderAIPanel(coin, d, score){
       out.classList.remove('hidden');
     } finally {
       btn.disabled = false;
-      btn.innerHTML = '🧠 วิเคราะห์กลยุทธ์ต้นน้ำด้วย AI (มุมมองนักลงทุนอาชีพ)';
+      btn.innerHTML = '🧠 วิเคราะห์ด้วย AI (มุมมองนักวิเคราะห์ • เชิงการศึกษา)';
     }
   };
 }
