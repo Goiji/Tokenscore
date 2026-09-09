@@ -88,6 +88,9 @@ header .spacer{flex:1}
 .banner{background:rgba(245,182,63,.1);border:1px solid rgba(245,182,63,.4);color:#ffd98a;
   border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px}
 .banner.welcome{background:linear-gradient(135deg,rgba(34,211,238,0.08),rgba(79,124,255,0.08));border-color:rgba(34,211,238,0.25);color:var(--tx)}
+.banner.info{background:linear-gradient(135deg,rgba(34,211,238,0.08),rgba(168,85,247,0.08));border-color:rgba(34,211,238,0.3);color:var(--tx)}
+.src-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:rgba(8,16,30,0.6);border:1px solid var(--line);font-size:13px;margin-top:6px}
+.src-row .st{margin-left:auto;font-weight:700;font-size:12px}
 .ov-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
 .ov-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:13px 16px;position:relative;overflow:hidden}
 .ov-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#3b63e8,transparent)}
@@ -409,6 +412,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
     </div>
   </div>
   <div class="banner hidden" id="banner-err"></div>
+  <div class="banner info hidden" id="banner-src"></div>
 
   <!-- ภาพรวมตลาด -->
   <div class="ov-row" id="ov-row"></div>
@@ -628,6 +632,22 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
     <div id="set-ai-msg" class="mt"></div>
     <div class="hint" id="set-usage" style="margin-top:10px"></div>
 
+    <div class="sec-title">แหล่งข้อมูลตลาด (Data Sources) — สำรองอัตโนมัติ 3 ชั้น</div>
+    <div class="src-row">1️⃣ หลัก: CoinGecko <span class="st" id="src-st-cg">…</span></div>
+    <div class="src-row">2️⃣ สำรอง: CoinMarketCap (ผ่าน Netlify Function) <span class="st" id="src-st-cmc">…</span></div>
+    <div class="src-row">3️⃣ สำรองสุดท้าย: Binance (ไม่ต้องใช้คีย์) <span class="st" id="src-st-bn">…</span></div>
+    <div class="hint" style="margin-top:8px">
+      เมื่อ CoinGecko ล่ม ระบบจะสลับไปแหล่งสำรองให้เองอัตโนมัติ แล้วกลับมาใช้ CoinGecko เมื่อกลับมาปกติ
+      • เปิดใช้ชั้น CoinMarketCap: สมัครคีย์ฟรีที่ <a href="https://coinmarketcap.com/api/" target="_blank" rel="noopener">coinmarketcap.com/api</a>
+      (Basic ฟรี 10,000 credits/เดือน) → นำไปตั้งเป็น Environment variable ชื่อ <code>CMC_API_KEY</code> ใน
+      Netlify (Site configuration → Environment variables) แล้ว Redeploy — <b>คีย์อยู่ในเซิร์ฟเวอร์ Netlify ของคุณเท่านั้น ไม่ผ่านเบราว์เซอร์</b>
+      (ดูวิธีทีละขั้นใน README) • ชั้น Binance ใช้ได้ทันทีโดยไม่ต้องตั้งค่าใด ๆ
+    </div>
+    <div class="flex mt" style="flex-wrap:wrap">
+      <button class="btn small" id="src-test">🧪 ตรวจสอบการเชื่อมต่อทั้ง 3 แหล่ง</button>
+    </div>
+    <div id="src-test-msg" class="hint" style="margin-top:8px"></div>
+
     <div class="sec-title">จัดการข้อมูล</div>
     <div class="flex" style="flex-wrap:wrap;gap:8px">
       <button class="btn small" id="set-chpin">🔐 เปลี่ยน PIN เข้ารหัสคีย์</button>
@@ -824,6 +844,9 @@ const state = {
   rate: 1,
   markets: [],
   global: null,
+  dataSource: 'coingecko',    // 'coingecko' | 'coinmarketcap' | 'binance' (แหล่งข้อมูลที่ใช้อยู่ขณะนี้)
+  cmcProxyOk: null,           // null=ยังไม่ตรวจ, true/false = มี/ไม่มี Netlify Function สำหรับ CMC
+  binanceHostIdx: 0,          // หมุนเวียน host สำรองของ Binance
   lastGoodTs: null,           // เวลาที่โหลดข้อมูลสำเร็จล่าสุด (ใช้แสดงบน UI ตอนโหลดใหม่ไม่สำเร็จ)
   mode: 'early',               // 'early' | 'acc30' | 'all' | 'squeeze' | 'reversal' | 'oversold' | 'momentum'
   sparkRange: '7d',            // ช่วงเวลาของกราฟราคาในตาราง: '7d' | '30d'
@@ -1355,14 +1378,188 @@ async function cgFetch(path, params, retries = 3){
     }
   }
 }
+/* ==================================================
+   แหล่งข้อมูลตลาดแบบสำรอง 3 ชั้น (Auto Failover)
+   1) CoinGecko (หลัก) → 2) CoinMarketCap ผ่าน Netlify Function → 3) Binance (ไม่ต้องใช้คีย์)
+   ================================================== */
 async function loadMarkets(){
-  const data = await cgFetch('/coins/markets', {
-    vs_currency:'usd', order:'market_cap_desc', per_page:50, page:1,
-    sparkline:true, price_change_percentage:'1h,24h,7d,14d,30d'
+  // 1) CoinGecko
+  try {
+    const data = await cgFetch('/coins/markets', {
+      vs_currency:'usd', order:'market_cap_desc', per_page:50, page:1,
+      sparkline:true, price_change_percentage:'1h,24h,7d,14d,30d'
+    });
+    if (Array.isArray(data) && data.length){
+      enrichMarkets(data);
+      state.markets = data;
+      state.dataSource = 'coingecko';
+      return state.markets;
+    }
+    throw new Error('CoinGecko ตอบชุดข้อมูลว่าง');
+  } catch(eCG){
+    // 2) CoinMarketCap ผ่าน Netlify Function (มีเฉพาะเมื่อ deploy บน Netlify + ตั้ง CMC_API_KEY)
+    try {
+      const cmc = await loadMarketsCMC();
+      state.markets = cmc;
+      state.dataSource = 'coinmarketcap';
+      return state.markets;
+    } catch(eCMC){
+      // 3) Binance — ไม่ต้องใช้คีย์ ใช้ได้ทุกที่
+      try {
+        const bn = await loadMarketsBinance();
+        state.markets = bn;
+        state.dataSource = 'binance';
+        return state.markets;
+      } catch(eBN){
+        throw eCG; // โยน error ของแหล่งหลักกลับไป (handler เดิมจัดการเรื่องคงข้อมูลเดิม + ลองใหม่)
+      }
+    }
+  }
+}
+
+/* ---- ชั้น 2: CoinMarketCap ผ่าน Netlify Function (same-origin proxy) ----
+   เหตุผลที่ต้องมี proxy: CMC บล็อกการเรียกจากเบราว์เซอร์โดยตรง (CORS)
+   เพื่อปกป้อง API key — คีย์จึงถูกเก็บใน Netlify Environment เท่านั้น */
+async function cmcProxyFetch(cmcPath, params){
+  if (state.cmcProxyOk === false) throw new Error('no-cmc-proxy');
+  const qs = new URLSearchParams({ path: cmcPath, ...(params || {}) });
+  try {
+    const res = await fetch('/.netlify/functions/cmc?' + qs.toString(), {
+      headers: { Accept: 'application/json' }, cache: 'no-store'
+    });
+    if (res.status === 404){ state.cmcProxyOk = false; throw new Error('no-cmc-proxy'); }
+    if (res.status === 503){ state.cmcProxyOk = true; throw new Error('no-cmc-key'); }
+    if (!res.ok) throw new Error('CMC proxy HTTP ' + res.status);
+    const js = await res.json();
+    state.cmcProxyOk = true;
+    return js;
+  } catch(e){
+    if (e instanceof TypeError){ state.cmcProxyOk = false; throw new Error('no-cmc-proxy'); }
+    throw e;
+  }
+}
+async function loadMarketsCMC(){
+  const js = await cmcProxyFetch('/v1/cryptocurrency/listings/latest', { start: 1, limit: 50, convert: 'USD' });
+  const items = (js && js.data) || [];
+  if (!items.length) throw new Error('CMC ตอบชุดข้อมูลว่าง');
+  const prevBySymbol = {};
+  state.markets.forEach(c => { prevBySymbol[c.symbol.toUpperCase()] = c; });
+  const out = items.map(it => {
+    const q = (it.quote && it.quote.USD) || {};
+    const prev = prevBySymbol[String(it.symbol).toUpperCase()];
+    return {
+      id: prev ? prev.id : ('cmc-' + it.slug),
+      symbol: String(it.symbol).toLowerCase(),
+      name: it.name,
+      image: prev ? prev.image : ('https://s2.coinmarketcap.com/static/img/coins/64x64/' + it.id + '.png'),
+      market_cap_rank: it.cmc_rank ?? null,
+      current_price: q.price ?? 0,
+      total_volume: q.volume_24h ?? 0,
+      market_cap: q.market_cap ?? null,
+      price_change_percentage_24h: q.percent_change_24h ?? 0,
+      price_change_percentage_7d_in_currency: q.percent_change_7d ?? 0,
+      price_change_percentage_14d_in_currency: 0,
+      price_change_percentage_30d_in_currency: q.percent_change_30d ?? 0,
+      // CMC แผนฟรีไม่มี sparkline — ใช้กราฟชุดล่าสุดที่มีจาก CoinGecko (ถ้ามี)
+      sparkline_in_7d: (prev && prev.sparkline_in_7d) ? prev.sparkline_in_7d : null,
+      _fromCMC: true
+    };
   });
-  if (Array.isArray(data)) enrichMarkets(data);
-  state.markets = data || [];
-  return state.markets;
+  enrichMarkets(out);
+  return out;
+}
+async function loadGlobalCMC(){
+  const js = await cmcProxyFetch('/v1/global-metrics/quotes/latest', {});
+  const q = (js.data && js.data.quote && js.data.quote.USD) || {};
+  return {
+    total_market_cap: { usd: q.total_market_cap ?? null },
+    total_volume: { usd: q.total_volume ?? null },
+    market_cap_percentage: { btc: q.btc_dominance ?? null, eth: q.eth_dominance ?? null },
+    market_cap_change_percentage_24h_usd: 0
+  };
+}
+
+/* ---- ชั้น 3: Binance (Public Market Data — ไม่ต้องใช้คีย์, ไม่ต้องตั้งค่า) ---- */
+const BINANCE_HOSTS = ['https://data-api.binance.vision', 'https://api.binance.com'];
+const DEFAULT_TOP_SYMBOLS = [
+  'BTC','ETH','BNB','SOL','XRP','ADA','DOGE','AVAX','DOT','LINK','TRX','TON','SHIB','LTC','BCH',
+  'UNI','ATOM','XLM','NEAR','APT','ARB','OP','FIL','INJ','HBAR','VET','IMX','GRT','ALGO','AAVE',
+  'SAND','MANA','AXS','EGLD','THETA','ICP','HBAR','XMR','ETC','RUNE','SEI','TIA','LDO','PEPE'
+];
+async function bFetch(path, params){
+  let lastErr = null;
+  for (let h = 0; h < BINANCE_HOSTS.length; h++){
+    const host = BINANCE_HOSTS[(state.binanceHostIdx + h) % BINANCE_HOSTS.length];
+    try {
+      const res = await fetch(host + path + '?' + new URLSearchParams(params), {
+        headers: { Accept: 'application/json' }, cache: 'no-store'
+      });
+      if (res.status === 451 || res.status === 429 || res.status === 418){
+        lastErr = new Error('Binance HTTP ' + res.status);
+        continue; // ลอง host ถัดไป
+      }
+      if (!res.ok) throw new Error('Binance HTTP ' + res.status);
+      const js = await res.json();
+      state.binanceHostIdx = (state.binanceHostIdx + h) % BINANCE_HOSTS.length;
+      return js;
+    } catch(e){ lastErr = e; }
+  }
+  throw lastErr || new Error('Binance ไม่ตอบสนอง');
+}
+async function loadMarketsBinance(){
+  // "จักรวาล" ของเหรียญ: ใช้ลิสต์ล่าสุดที่เคยได้จาก CoinGecko (สำรองไว้ใน state/แคช) หรือลิสต์ดีฟอลต์
+  const prevList = state.markets.length ? state.markets : null;
+  const syms = prevList ? prevList.map(c => c.symbol.toUpperCase()) : DEFAULT_TOP_SYMBOLS;
+  const all = await bFetch('/api/v3/ticker/24hr', {});
+  const byPair = {};
+  for (const t of all) byPair[t.symbol] = t;
+  const out = [];
+  for (const s of syms){
+    const pair = byPair[s + 'USDT'] || byPair[s + 'USD'] || byPair[s + 'BUSD'];
+    if (!pair) continue;
+    const prev = prevList ? prevList.find(c => c.symbol.toUpperCase() === s) : null;
+    out.push({
+      id: prev ? prev.id : ('bin-' + s.toLowerCase()),
+      symbol: s.toLowerCase(),
+      name: prev ? prev.name : s,
+      image: prev ? prev.image : '',
+      market_cap_rank: prev ? prev.market_cap_rank : null,
+      current_price: parseFloat(pair.lastPrice) || 0,
+      total_volume: parseFloat(pair.quoteVolume) || 0,
+      market_cap: prev ? prev.market_cap : null,
+      price_change_percentage_24h: parseFloat(pair.priceChangePercent) || 0,
+      price_change_percentage_7d_in_currency: null,   // เติมจาก klines
+      price_change_percentage_14d_in_currency: 0,
+      price_change_percentage_30d_in_currency: null,  // เติมจาก klines
+      sparkline_in_7d: null,                          // เติมจาก klines
+      _fromBinance: true,
+      _pair: pair.symbol
+    });
+  }
+  if (!out.length) throw new Error('Binance: ไม่พบคู่เทรดที่ตรงกับเหรียญในลิสต์');
+  // ดึง klines เพิ่ม: กราฟย่อย 7 วัน (รายชั่วโมง) + % 7วัน/30วัน (รายวัน) — ทีละชุดกันยิงพร้อมกันเกิน
+  const BATCH = 10;
+  for (let i = 0; i < out.length; i += BATCH){
+    await Promise.all(out.slice(i, i + BATCH).map(async c => {
+      try {
+        const [k7, k30] = await Promise.all([
+          bFetch('/api/v3/klines', { symbol: c._pair, interval: '1h', limit: 168 }),
+          bFetch('/api/v3/klines', { symbol: c._pair, interval: '1d', limit: 31 })
+        ]);
+        const closes7 = k7.map(k => parseFloat(k[4]));
+        const closes30 = k30.map(k => parseFloat(k[4]));
+        if (closes7.length > 2){
+          c.sparkline_in_7d = { price: closes7 };
+          if (closes7[0]) c.price_change_percentage_7d_in_currency = (closes7[closes7.length-1]/closes7[0] - 1) * 100;
+        }
+        if (closes30.length > 2 && closes30[0]){
+          c.price_change_percentage_30d_in_currency = (closes30[closes30.length-1]/closes30[0] - 1) * 100;
+        }
+      } catch(e){ /* คงค่า null/0 — ยังแสดงราคา/24ชม./วอลุ่มได้ */ }
+    }));
+  }
+  enrichMarkets(out);
+  return out;
 }
 /* ---- คำนวณอินดิเคเตอร์/คะแนนทุกชนิดให้เหรียญในลิสต์ ---- */
 function enrichMarkets(data){
@@ -1405,14 +1602,32 @@ function loadCachedMarkets(){
   return null;
 }
 async function loadGlobal(){
-  const data = await cgFetch('/global', {});
-  state.global = data ? data.data : null;
-  return state.global;
+  try {
+    const data = await cgFetch('/global', {});
+    if (data && data.data){
+      state.global = data.data;
+      return state.global;
+    }
+    throw new Error('CoinGecko global ตอบชุดว่าง');
+  } catch(e){
+    // สำรอง: CoinMarketCap ผ่าน Netlify (Binance ไม่มีข้อมูล global — ใช้ข้อมูลเดิม/แคชต่อไป)
+    state.global = await loadGlobalCMC();
+    return state.global;
+  }
 }
 async function loadThbRate(){
   try {
     const r = await cgFetch('/simple/price', { ids:'bitcoin', vs_currencies:'usd,thb' });
     if (r && r.bitcoin && r.bitcoin.usd && r.bitcoin.thb) return r.bitcoin.thb / r.bitcoin.usd;
+  } catch(e){}
+  // สำรอง: Binance (BTCTHB / BTCUSDT) — ไม่ต้องใช้คีย์
+  try {
+    const t = await bFetch('/api/v3/ticker/24hr', { symbols: '["BTCUSDT","BTCTHB"]' });
+    const usd = Array.isArray(t) ? t.find(x => x.symbol === 'BTCUSDT') : null;
+    const thb = Array.isArray(t) ? t.find(x => x.symbol === 'BTCTHB') : null;
+    if (usd && thb && parseFloat(usd.lastPrice) > 0 && parseFloat(thb.lastPrice) > 0){
+      return parseFloat(thb.lastPrice) / parseFloat(usd.lastPrice);
+    }
   } catch(e){}
   return null;
 }
@@ -1662,7 +1877,7 @@ function buildAIPrompt(coin, d, score){
 ให้วิเคราะห์เหรียญนี้อย่างเฉียบคม เน้นตอบโจทย์: "ราคายังไม่พุ่งหรือวิ่งไปแล้ว? และอินดิเคเตอร์ส่งสัญญาณน่าจับตาหรือไม่?"
 
 ข้อมูลสินทรัพย์:
-- เหรียญ: ${coin.name} (${coin.symbol.toUpperCase()}) Market Cap Rank: #${coin.market_cap_rank}
+- เหรียญ: ${coin.name} (${coin.symbol.toUpperCase()}) Market Cap Rank: ${coin.market_cap_rank ? "#" + coin.market_cap_rank : "N/A (โหมดสำรอง Binance ไม่มีข้อมูลอันดับ)"}
 - ราคาปัจจุบัน: ${fmtPrice(coin.current_price, rate)} ${cur}
 - การเปลี่ยนแปลง: 24ชม. ${pctTxt(coin.price_change_percentage_24h ?? 0)} | 7วัน ${pctTxt(coin.price_change_percentage_7d_in_currency ?? 0)} | 30วัน ${pctTxt(coin.price_change_percentage_30d_in_currency ?? 0)}
 - คะแนนน่าจับตา (Watchlist Score): ${earlyScore}/100
@@ -1877,7 +2092,7 @@ function renderSpotlight(){
           <img class="spot-img" src="${esc(c.image)}" alt="" loading="lazy">
           <div class="spot-info">
             <div class="spot-nm">${esc(c.name)} <span class="badge ${score>=80?'early-tag':'squeeze-tag'}">#${idx+1} น่าจับตา</span></div>
-            <div class="spot-sy">${esc(c.symbol.toUpperCase())} • Market Cap #${c.market_cap_rank}</div>
+            <div class="spot-sy">${esc(c.symbol.toUpperCase())} • Market Cap ${c.market_cap_rank ? '#' + c.market_cap_rank : '—'}</div>
           </div>
           <div class="spot-score-box">
             <div class="spot-score-val" style="color:${col}">${score}</div>
@@ -1933,7 +2148,9 @@ function renderAccSpotlight(){
   }
   const withData = state.markets.filter(c => !c._isStable && c._acc && c._accM);
   if (!withData.length){
-    grid.innerHTML = acc30Attempts > 0
+    grid.innerHTML = state.dataSource !== 'coingecko'
+      ? '<div class="spot-card acc"><span class="hint">⚠️ ขณะนี้ใช้ข้อมูลสำรอง (' + (state.dataSource === 'binance' ? 'Binance' : 'CoinMarketCap') + ') — คะแนนสะสมพลัง 30 วันต้องใช้ข้อมูลราคารายวันจาก CoinGecko และจะกลับมาคำนวณเมื่อแหล่งหลักกลับมาปกติในรอบถัดไป</span></div>'
+      : acc30Attempts > 0
       ? '<div class="spot-card acc"><span class="hint">⚠️ ยังโหลดข้อมูล 30 วันจาก CoinGecko ไม่สำเร็จ (อาจติด rate limit) — ระบบจะลองใหม่อัตโนมัติในรอบถัดไป</span></div>'
       : '<div class="spot-card acc"><span class="hint">⏳ กำลังโหลดข้อมูลราคา 30 วันจาก CoinGecko ทีละเหรียญ (กัน rate limit) — การ์ดจะทยอยเด้งขึ้นภายใน 1–2 นาที</span></div>';
     return;
@@ -1953,7 +2170,7 @@ function renderAccSpotlight(){
           <img class="spot-img" src="${esc(c.image)}" alt="" loading="lazy">
           <div class="spot-info">
             <div class="spot-nm">${esc(c.name)} <span class="badge acc-tag">#${idx+1} สะสมพลัง 30ว</span></div>
-            <div class="spot-sy">${esc(c.symbol.toUpperCase())} • Market Cap #${c.market_cap_rank}</div>
+            <div class="spot-sy">${esc(c.symbol.toUpperCase())} • Market Cap ${c.market_cap_rank ? '#' + c.market_cap_rank : '—'}</div>
           </div>
           <div class="spot-score-box">
             <div class="spot-score-val" style="color:${col}">${s.total}</div>
@@ -2159,7 +2376,7 @@ function renderTable(){
 
   const k = state.sort.k, dir = state.sort.dir;
   list = list.slice().sort((a,b) => {
-    if (k === 'rank') return (a.market_cap_rank - b.market_cap_rank) * dir;
+    if (k === 'rank') return ((a.market_cap_rank ?? 9999) - (b.market_cap_rank ?? 9999)) * dir;
     if (k === 'name') return a.name.localeCompare(b.name) * dir;
     if (k === 'price') return (a.current_price - b.current_price) * dir;
     if (k === 'c24') return ((a.price_change_percentage_24h||0) - (b.price_change_percentage_24h||0)) * dir;
@@ -2202,7 +2419,7 @@ function renderTable(){
     const rowCls = isAccHi ? 'highlight-acc' : (isHighEarly ? 'highlight-early' : '');
 
     return `<tr data-id="${esc(c.id)}" class="${rowCls}">
-      <td class="rank-no">${c.market_cap_rank}</td>
+      <td class="rank-no">${c.market_cap_rank ?? "—"}</td>
       <td>
         <div class="coin-cell">
           <img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
@@ -2246,7 +2463,7 @@ function openDrawer(coinId){
   state.drawerTab = 'score';
   $('#dr-icon').src = coin.image;
   $('#dr-name').textContent = coin.name;
-  $('#dr-sub').textContent = coin.symbol.toUpperCase() + ' • อันดับ #' + coin.market_cap_rank;
+  $('#dr-sub').textContent = coin.symbol.toUpperCase() + (coin.market_cap_rank ? ' • อันดับ #' + coin.market_cap_rank : '');
   $('#dr-price').textContent = fmtPrice(coin.current_price, state.rate) + ' ' + curSym();
   const ch24 = coin.price_change_percentage_24h ?? 0;
   const chEl = $('#dr-chg');
@@ -2809,7 +3026,7 @@ async function refreshAll(){
   if (btn) btn.disabled = true;
   try {
     const [mk, gl] = await Promise.allSettled([loadMarkets(), loadGlobal()]);
-    if (mk.status === 'rejected') throw mk.reason;         // ตลาดล้ม = ถือว่ารอบนี้ล้ม (คงข้อมูลเดิมไว้)
+    if (mk.status === 'rejected') throw mk.reason;         // ตลาดล้มทั้ง 3 ชั้น = ถือว่ารอบนี้ล้ม (คงข้อมูลเดิมไว้)
     state.lastGoodTs = Date.now();
     state.rate = CUR[state.currency].rate;
     renderOverview();
@@ -2818,22 +3035,38 @@ async function refreshAll(){
     updateCounts();
     renderTable();
     cacheMarkets();
-    ensureAcc30Data();
-    $('#last-update').textContent = 'อัปเดต: ' + fmtDT(state.lastGoodTs) + ' (อัตโนมัติทุก 2 ชม.)';
+    if (state.dataSource === 'coingecko') ensureAcc30Data(); // OHLC 30ว มีเฉพาะ CoinGecko — ไม่ยิงตอนใช้แหล่งสำรอง
+    const srcTxt = state.dataSource === 'coinmarketcap'
+      ? 'ข้อมูลสำรอง: CoinMarketCap • ' : state.dataSource === 'binance' ? 'ข้อมูลสำรอง: Binance • ' : '';
+    $('#last-update').textContent = 'อัปเดต: ' + fmtDT(state.lastGoodTs) + ' (' + srcTxt + 'อัตโนมัติทุก 2 ชม.)';
     $('#banner-err').classList.add('hidden');
+    const srcBanner = $('#banner-src');
+    if (state.dataSource === 'coinmarketcap'){
+      srcBanner.innerHTML = '📦 <b>กำลังใช้ข้อมูลสำรองจาก CoinMarketCap</b> (ผ่าน Netlify) — CoinGecko ไม่ตอบสนอง '
+        + '• ราคา / วอลุ่ม / มูลค่าตลาด / อันดับ สดจาก CMC • กราฟย่อย 7 วันเป็นข้อมูลชุดล่าสุดที่มีจาก CoinGecko '
+        + '• เมื่อ CoinGecko กลับมาปกติ ระบบจะสลับกลับเองในรอบถัดไป';
+      srcBanner.classList.remove('hidden');
+    } else if (state.dataSource === 'binance'){
+      srcBanner.innerHTML = '🟡 <b>กำลังใช้ข้อมูลสำรองจาก Binance</b> (ไม่ต้องใช้คีย์) — CoinGecko และ CoinMarketCap ไม่ตอบสนอง '
+        + '• ราคา / วอลุ่ม / กราฟ 7 วัน / % 7วัน–30วัน สดจาก Binance (ไม่มี Market Cap / อันดับ) '
+        + '• เมื่อแหล่งหลักกลับมาปกติ ระบบจะสลับกลับเองในรอบถัดไป';
+      srcBanner.classList.remove('hidden');
+    } else {
+      srcBanner.classList.add('hidden');
+    }
     scheduleNextRefresh(REFRESH_OK_MS);
   } catch(e){
     const hasData = state.markets.length > 0;
     const retryMs = hasData ? REFRESH_FAIL_RETRY_MS : REFRESH_EMPTY_RETRY_MS;
     const retryTxt = hasData ? Math.round(retryMs/60000) + ' นาที' : Math.round(retryMs/1000) + ' วินาที';
     if (hasData){
-      $('#banner-err').innerHTML = '⚠️ โหลดข้อมูลใหม่ไม่สำเร็จ (' + esc(e.message) + ') — '
+      $('#banner-err').innerHTML = '⚠️ โหลดข้อมูลใหม่ไม่สำเร็จจากทุกแหล่ง (CoinGecko → CoinMarketCap → Binance) — ' + esc(e.message) + ' — '
         + '<b>ยังคงแสดงข้อมูลชุดล่าสุดที่โหลดสำเร็จไว้</b> (อัปเดตล่าสุด: ' + (state.lastGoodTs ? fmtDT(state.lastGoodTs) : '—') + ') '
         + '• จะลองใหม่อัตโนมัติในอีก ' + retryTxt
         + ' <button class="btn small" id="btn-retry-now">🔄 ลองใหม่ตอนนี้</button>';
     } else {
-      $('#banner-err').innerHTML = '⚠️ โหลดข้อมูลตลาดไม่สำเร็จ (' + esc(e.message) + ') — อาจติด rate limit ของ CoinGecko '
-        + '• จะลองใหม่อัตโนมัติในอีก ' + retryTxt
+      $('#banner-err').innerHTML = '⚠️ โหลดข้อมูลตลาดไม่สำเร็จจากทุกแหล่ง (CoinGecko → CoinMarketCap → Binance) — ' + esc(e.message)
+        + ' • จะลองใหม่อัตโนมัติในอีก ' + retryTxt
         + ' <button class="btn small" id="btn-retry-now">🔄 ลองใหม่ตอนนี้</button>';
     }
     $('#banner-err').classList.remove('hidden');
@@ -2855,7 +3088,49 @@ function openSettings(){
   $('#set-model').value = state.ai.model || '';
   $('#set-key').value = state.ai.key || '';
   $('#set-ai-msg').textContent = '';
+  renderSourceStatus();
   updateUsageUI();
+}
+
+/* ---- สถานะแหล่งข้อมูล 3 ชั้น + ปุ่มทดสอบการเชื่อมต่อ ---- */
+function renderSourceStatus(testing){
+  const set = (id, txt, color) => { const el = $(id); if (el){ el.textContent = txt; el.style.color = color || 'var(--tx3)'; } };
+  const cgTxt = state.dataSource === 'coingecko' ? '✓ ใช้งานอยู่' : (state.markets.length ? '✗ ล่ม (สลับใช้แหล่งสำรอง)' : testing ? '… กำลังทดสอบ' : '— ยังไม่ทราบ');
+  set('#src-st-cg', cgTxt, state.dataSource === 'coingecko' ? 'var(--ok)' : 'var(--bad)');
+  const cmcTxt = testing ? '… กำลังทดสอบ' :
+    state.cmcProxyOk === true ? (state.dataSource === 'coinmarketcap' ? '✓ ใช้งานอยู่' : '✓ พร้อมใช้ (ผ่าน Netlify)') :
+    state.cmcProxyOk === false ? '✗ ไม่พบ proxy (ต้อง deploy บน Netlify — ดู README)' : '— ยังไม่ทดสอบ';
+  set('#src-st-cmc', cmcTxt, state.cmcProxyOk === true ? 'var(--ok)' : state.cmcProxyOk === false ? 'var(--bad)' : 'var(--tx3)');
+  const bnTxt = state.dataSource === 'binance' ? '✓ ใช้งานอยู่' : testing ? '… กำลังทดสอบ' : '✓ พร้อมเสมอ (ไม่ต้องตั้งค่า)';
+  set('#src-st-bn', bnTxt, (state.dataSource === 'binance' || !testing) ? 'var(--ok)' : 'var(--tx3)');
+}
+async function testSources(){
+  const msg = $('#src-test-msg');
+  const btn = $('#src-test');
+  btn.disabled = true;
+  renderSourceStatus(true);
+  msg.textContent = '⏳ กำลังทดสอบ...';
+  const results = [];
+  // 1) CoinGecko
+  try { await cgFetch('/ping', {}, 1); results.push('CoinGecko: ✓ ตอบสนอง'); }
+  catch(e){ results.push('CoinGecko: ✗ ' + e.message); }
+  // 2) CMC proxy (Netlify Function)
+  try {
+    await cmcProxyFetch('/v1/global-metrics/quotes/latest', {});
+    results.push('CoinMarketCap: ✓ proxy พร้อมใช้');
+  } catch(e){
+    results.push(e.message === 'no-cmc-proxy'
+      ? 'CoinMarketCap: ✗ ไม่พบ proxy (ต้อง deploy บน Netlify พร้อมโฟลเดอร์ netlify/functions และตั้ง CMC_API_KEY)'
+      : e.message === 'no-cmc-key'
+        ? 'CoinMarketCap: ⚠ พบ proxy แต่ยังไม่ได้ตั้ง CMC_API_KEY ใน Netlify'
+        : 'CoinMarketCap: ✗ ' + e.message);
+  }
+  // 3) Binance
+  try { await bFetch('/api/v3/ping', {}); results.push('Binance: ✓ ตอบสนอง'); }
+  catch(e){ results.push('Binance: ✗ ' + e.message); }
+  msg.innerHTML = results.map(r => '• ' + esc(r)).join('<br>');
+  renderSourceStatus();
+  btn.disabled = false;
 }
 function closeSettings(){ $('#modal-settings').classList.add('hidden'); }
 
@@ -3092,6 +3367,8 @@ function wireEvents(){
 
   // Settings
   $('#set-close').onclick = closeSettings;
+  const srcTestBtn = $('#src-test');
+  if (srcTestBtn) srcTestBtn.onclick = testSources;
   $('#set-provider').onchange = e => applyProvider(e.target.value, 'set');
   $('#set-ai-save').onclick = saveAISettings;
   $('#set-ai-test').onclick = testAI;
