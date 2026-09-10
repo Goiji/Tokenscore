@@ -306,6 +306,11 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
 .dr-about{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.7;color:var(--tx2)}
 .dr-about .ab-t{display:flex;align-items:center;gap:6px;font-weight:800;color:var(--tx);font-size:12.5px;margin-bottom:5px}
 .dr-about .ab-src{margin-left:auto;font-size:10.5px;color:var(--tx3);font-weight:600;flex:none}
+/* ลิงก์ไปหน้าเหรียญบน CoinGecko */
+.dr-cg{font-size:11px;color:var(--acc2);text-decoration:none;font-weight:700;margin-left:6px;white-space:nowrap}
+.dr-cg:hover{color:var(--acc);text-decoration:underline}
+.ab-more{display:inline-block;margin-top:8px;font-size:12px;color:var(--acc2);text-decoration:none;font-weight:700}
+.ab-more:hover{color:var(--acc);text-decoration:underline}
 
 /* Watchlist Signal Detail Section inside Drawer */
 .dr-early-box{
@@ -552,7 +557,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
     <img id="dr-icon" src="" alt="">
     <div style="flex:1">
       <div class="nm" id="dr-name">—</div>
-      <div class="sy" id="dr-sub">—</div>
+      <div class="sy"><span id="dr-sub">—</span><a id="dr-cg" class="dr-cg hidden" target="_blank" rel="noopener" title="เปิดหน้าข้อมูลของเหรียญนี้บน CoinGecko (แท็บใหม่)">↗ CoinGecko</a></div>
     </div>
     <div style="text-align:right">
       <div id="dr-price" style="font-weight:800;font-size:16px">—</div>
@@ -570,6 +575,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
     <div class="dr-about hidden" id="dr-about">
       <div class="ab-t">💡 เหรียญนี้คืออะไร <span class="ab-src" id="dr-about-src"></span></div>
       <div id="dr-about-text">—</div>
+      <a id="dr-about-cg" class="ab-more hidden" target="_blank" rel="noopener" title="เปิดหน้าข้อมูลเต็มของเหรียญนี้บน CoinGecko (แท็บใหม่)"></a>
     </div>
 
     <div id="tab-score">
@@ -2588,6 +2594,18 @@ function renderTable(){
 }
 
 /* ---------------- Drawer ---------------- */
+/* ---- ลิงก์ไปหน้าเหรียญบน CoinGecko ----
+   รูปแบบทางการ: www.coingecko.com/en/coins/{id}
+   • โหมด CMC (id = cmc-slug) → slug มักตรงกับ CG → ใช้ slug
+   • โหมด Binance (id = bin-XXX) → ไม่มี id ของ CG → พาไปหน้าค้นหาด้วย symbol แทน */
+function coingeckoUrl(coin){
+  let cgId = coin.id;
+  if (cgId && cgId.startsWith('cmc-')) cgId = cgId.slice(4);
+  if (cgId && !cgId.startsWith('bin-')) return 'https://www.coingecko.com/en/coins/' + encodeURIComponent(cgId);
+  const sym = String(coin.symbol || '').toUpperCase();
+  return sym ? 'https://www.coingecko.com/en/search?query=' + encodeURIComponent(sym) : 'https://www.coingecko.com/en';
+}
+
 /* ---- กล่อง "เหรียญนี้คืออะไร" (ใน Drawer) ----
    1) คำอธิบายภาษาไทยในตัวแอปสำหรับเหรียญหลัก (ใช้ได้ทุกโหมด แม้ช่วงที่ใช้ข้อมูลสำรอง)
    2) เหรียญอื่น → ดึงคำอธิบายจาก CoinGecko (/coins/{id}) แล้วเก็บแคชไว้ในเครื่อง */
@@ -2823,6 +2841,14 @@ function openDrawer(coinId){
   $('#dr-icon').src = coin.image;
   $('#dr-name').textContent = coin.name;
   $('#dr-sub').textContent = coin.symbol.toUpperCase() + (coin.market_cap_rank ? ' • อันดับ #' + coin.market_cap_rank : '');
+  const cgLink = $('#dr-cg');
+  if (cgLink){ cgLink.href = coingeckoUrl(coin); cgLink.classList.remove('hidden'); }
+  const abLink = $('#dr-about-cg');
+  if (abLink){
+    abLink.href = coingeckoUrl(coin);
+    abLink.textContent = 'ดูข้อมูลเต็มของ ' + coin.name + ' บน CoinGecko ↗';
+    abLink.classList.remove('hidden');
+  }
   $('#dr-price').textContent = fmtPrice(coin.current_price, state.rate) + ' ' + curSym();
   const ch24 = coin.price_change_percentage_24h ?? 0;
   const chEl = $('#dr-chg');
