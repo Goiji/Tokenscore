@@ -187,6 +187,10 @@ tbody tr.highlight-acc:hover{background:rgba(168,85,247,0.11)}
 #spark-tip .st-title{font-weight:800;font-size:12.5px;color:#fff;margin-bottom:4px}
 #spark-tip .st-row{display:flex;justify-content:space-between;gap:16px;color:var(--tx2)}
 #spark-tip .st-row b{color:var(--tx)}
+.ts-tip{position:fixed;z-index:999;pointer-events:none;background:#101d38;border:1px solid var(--line-hi);border-radius:10px;
+  padding:9px 12px;font-size:12px;line-height:1.65;box-shadow:0 12px 32px rgba(0,0,0,.55);max-width:280px;white-space:normal;
+  opacity:0;transform:translateY(4px);transition:opacity .1s ease,transform .1s ease}
+.ts-tip.show{opacity:1;transform:none}
 
 /* segmented control (สลับกราฟ 7/30 วัน) */
 .seg-control{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg2)}
@@ -545,11 +549,11 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
           <th data-k="c7">7วัน</th>
           <th data-k="c30">30วัน</th>
           <th data-k="ath" title="ระยะห่างจากราคาสูงสุดตลอดกาล (ATH — All-Time High) เช่น -75% คือราคาปัจจุบันต่ำกว่าจุดสูงสุดตลอดกาล 75% (เชิงข้อมูลอ้างอิง ไม่ได้การันตีว่าราคาจะกลับไปถึงจุดนั้น)">จาก ATH<span class="arr"></span></th>
-          <th data-k="rsi" title="RSI (Relative Strength Index) จากกราฟ 7 วัน — ต่ำกว่า 30 = Oversold, สูงกว่า 70 = Overbought, 30-50 = โซนสะสม">RSI (14)</th>
-          <th title="ป้ายสัญญาณที่เกิดจริงจากอินดิเคเตอร์ (กราฟ 7 วัน) เช่น BB Squeeze, MACD Golden Cross, RSI ฟื้นจากโซนล่าง, สร้างฐาน, ราคาพุ่งไปแล้ว — ดูเกณฑ์ทั้งหมดในหน้ารายละเอียดเหรียญ">สัญญาณอินดิเคเตอร์</th>
+          <th data-k="rsi" id="th-rsi">RSI (14)</th>
+          <th id="th-sig">สัญญาณอินดิเคเตอร์</th>
           <th id="th-trend" data-k="spark" title="คลิกเพื่อเรียงตาม % เปลี่ยนแปลงของกราฟที่แสดง (ชี้ที่กราฟเพื่อดู Min/Max)"><span id="th-trend-label">เทรนด์ 7 วัน</span><span class="arr"></span></th>
           <th data-k="pos30" id="th-pos30" title="ตำแหน่งราคาปัจจุบันในกรอบ 7 วัน (0% = ที่ Low 7ว, 100% = ที่ High 7ว) — เปลี่ยนตามช่วงกราฟที่เลือกด้านบนตาราง"><span id="th-pos-label">ตำแหน่งในกรอบ 7ว</span><span class="arr"></span></th>
-          <th data-k="earlyScore" class="th-early" title="คะแนนน่าจับตา (0-100): ราคายังไม่ไล่ยอด 30% • RSI โซนสะสม 25% • MACD กลับตัว 20% • BB Squeeze 15% • สภาพคล่อง 10% — ถ้าราคาพุ่งแรงแล้วจะถูกจำกัดไม่เกิน 45">คะแนนน่าจับตา 🎯<span class="arr"></span></th>
+          <th data-k="earlyScore" class="th-early" title="คะแนนน่าจับตา (0-100): ราคายังไม่ไล่ยอด 30% • RSI โซนสะสม 25% • MACD กลับตัว 20% • BB Squeeze 15% • สภาพคล่อง 10% — ถ้าราคาพุ่งแรงแล้วจะถูกจำกัดไม่เกิน 45 (คำนวณจากข้อมูล 7 วันล่าสุดเสมอ ไม่เปลี่ยนตามตัวสลับกราฟ)">คะแนนน่าจับตา 🎯<span class="arr"></span></th>
           <th data-k="accScore" class="th-acc" title="คะแนนสะสมพลัง 30 วัน (Accumulation Score 0-100): โครงสร้างฐาน 30% • ตำแหน่งในกรอบ 30% • การเริ่มยก Low 25% • คุณภาพโครงสร้าง 15%">คะแนนสะสม 30ว 📦<span class="arr"></span></th>
           <th data-k="score" title="คะแนนรวม (0-100 + เกรด): จาก % เปลี่ยนแปลง 24ชม./7วัน/30วัน + สภาพคล่อง (วอลุ่ม/มูลค่าตลาด) — เกรด A+ ≥88, A ≥78, B+ ≥68, B ≥58, C ≥48, D ≥35, F ต่ำกว่านั้น (เกณฑ์เดียวกับในหน้ารายละเอียดเหรียญ)">คะแนนรวม ⚡</th>
         </tr>
@@ -2197,6 +2201,17 @@ function frameBarHTML(m, big=false, lbl='30ว'){
     </div>
   </div>`;
 }
+/* RSI + ป้ายสัญญาณอินดิเคเตอร์ "ตามช่วงกราฟที่เลือกในตาราง" —
+   7ว จาก sparkline 7 วัน (มาพร้อมข้อมูลตลาด) / 30ว จากแท่งราคา 4 ชม. ของโครงสร้างฐาน 30 วัน (โหลดแบบทยอย) */
+function anFor(c){
+  if (state.sparkRange === '30d'){
+    const m = c._accM;
+    if (!m || !m.closes || m.closes.length < 30) return null;   // ยังไม่โหลดข้อมูล 30 วัน → แสดงสถานะโหลด
+    if (!c._an30 || c._an30.src !== m) c._an30 = { src: m, an: analyzeSparkline(m.closes, c) };   // คำนวณครั้งเดียวต่อชุดข้อมูล
+    return c._an30.an;
+  }
+  return c._analysis || null;
+}
 /* ตำแหน่งในกรอบ "ตามช่วงกราฟที่เลือกในตาราง" — 7ว คำนวณจาก sparkline 7 วัน / 30ว จากโครงสร้างฐาน 30 วัน */
 function posFrameFor(c){
   if (state.sparkRange === '30d'){
@@ -2375,7 +2390,7 @@ function renderTable(){
     if (k === 'c7') return ((a.price_change_percentage_7d_in_currency||0) - (b.price_change_percentage_7d_in_currency||0)) * dir;
     if (k === 'c30') return ((a.price_change_percentage_30d_in_currency||0) - (b.price_change_percentage_30d_in_currency||0)) * dir;
     if (k === 'ath') return (((a.ath_change_percentage ?? 1) - (b.ath_change_percentage ?? 1)) * dir);   // null → 1 ให้ร่วงไปท้ายสุดเสมอ
-    if (k === 'rsi') return (((a._analysis&&a._analysis.rsi)||50) - ((b._analysis&&b._analysis.rsi)||50)) * dir;
+    if (k === 'rsi') return ((((anFor(a)&&anFor(a).rsi)||50)) - (((anFor(b)&&anFor(b).rsi)||50))) * dir;
     if (k === 'spark') return (((a._sparkChg ?? -1e9) - (b._sparkChg ?? -1e9)) * dir);
     if (k === 'pos30') return (((posFrameFor(a) ? posFrameFor(a).pos : -1) - (posFrameFor(b) ? posFrameFor(b).pos : -1)) * dir);
     if (k === 'earlyScore') return ((a._earlyScore||0) - (b._earlyScore||0)) * dir;
@@ -2386,7 +2401,7 @@ function renderTable(){
 
   const rate = state.rate, sym = curSym();
   tb.innerHTML = list.map(c => {
-    const an = c._analysis;
+    const an = anFor(c);
     const eScore = c._earlyScore || 0;
     const qScore = c._quickScore || 0;
     const eCol = colorForScore(eScore);
@@ -2395,9 +2410,13 @@ function renderTable(){
     const ch7  = c.price_change_percentage_7d_in_currency ?? 0;
     const ch30 = c.price_change_percentage_30d_in_currency ?? 0;
 
-    const rsiVal = an ? an.rsi : '—';
+    const rsiPer = state.sparkRange === '30d' ? '30 วัน' : '7 วัน';
+    const rsiVal = an ? an.rsi : (state.sparkRange === '30d' ? '⏳' : '—');
     let rsiCls = 'rsi-neutral';
-    let rsiTip = 'RSI (Relative Strength Index) วัดความเร็ว/ความแรงของการเปลี่ยนแปลงราคา ช่วง 0-100 (คำนวณจากกราฟ 7 วัน)';
+    let rsiTip = 'RSI (Relative Strength Index) วัดความเร็ว/ความแรงของการเปลี่ยนแปลงราคา ช่วง 0-100 (คำนวณจากกราฟ ' + rsiPer + ')';
+    if (!an && state.sparkRange === '30d'){
+      rsiTip = 'กำลังทยอยโหลดข้อมูล 30 วันของเหรียญนี้ (โหลดทีละเหรียญเพื่อกัน rate limit) — เมื่อพร้อม RSI จะคำนวณจากกราฟ 30 วันให้อัตโนมัติ';
+    }
     if (an){
       if (an.rsi >= 30 && an.rsi <= 50) rsiCls = 'rsi-sweet';
       else if (an.rsi < 30) rsiCls = 'rsi-oversold';
@@ -2406,12 +2425,19 @@ function renderTable(){
         : an.rsi <= 50 ? 'RSI 30-50 (โซนสะสม) — แรงขายเบาบาง ราคาพักฐาน เป็นช่วงที่นักวิเคราะห์มักจับตาหาจังหวะ'
         : an.rsi <= 68 ? 'RSI 50-68 (ฝั่งบวก) — ผู้ซื้อกำลังมีเปรียบ โมเมนตัมเป็นขาขึ้น แต่ยังไม่ร้อนแรง'
         : 'RSI สูงกว่า 68 (Overbought) — ราคาวิ่งแรงจนร้อน เสี่ยงถูกขายทำกำไร ระวังการไล่ราคา';
-      rsiTip = 'RSI (Relative Strength Index) วัดความเร็ว/ความแรงของการเปลี่ยนแปลงราคา ช่วง 0-100 (คำนวณจากกราฟ 7 วัน)\nค่าของเหรียญนี้: ' + an.rsi + '\n' + zone;
+      rsiTip = 'RSI (Relative Strength Index) วัดความเร็ว/ความแรงของการเปลี่ยนแปลงราคา ช่วง 0-100 (คำนวณจากกราฟ ' + rsiPer + ')\nค่าของเหรียญนี้: ' + an.rsi + '\n' + zone;
     }
 
-    const tagBadges = (an && an.tags && an.tags.length) ? an.tags.slice(0, 2).map(t =>
-      `<span class="badge ${t.cls || 'early-tag'}" title="${esc(TAG_HELP[t.id] || t.text)}">${t.icon} ${esc(t.text.split(' ')[0])}</span>`
-    ).join('') : '<span class="spark-none" title="ยังไม่มีสัญญาณเด่น — อินดิเคเตอร์ (RSI / MACD / Bollinger Bands) ยังไม่ชี้อะไรชัดเจนในจังหวะนี้ กดเข้าไปดูรายละเอียดเหรียญได้">—</span>';
+    let tagBadges;
+    if (an && an.tags && an.tags.length){
+      tagBadges = an.tags.slice(0, 2).map(t =>
+        `<span class="badge ${t.cls || 'early-tag'}" title="${esc(TAG_HELP[t.id] || t.text)}">${t.icon} ${esc(t.text.split(' ')[0])}</span>`
+      ).join('');
+    } else if (!an && state.sparkRange === '30d'){
+      tagBadges = '<span class="spark-loading" title="กำลังทยอยโหลดข้อมูล 30 วันของเหรียญนี้ — เมื่อพร้อมจะแสดงสัญญาณที่คำนวณจากกราฟ 30 วัน">⏳ …</span>';
+    } else {
+      tagBadges = '<span class="spark-none" title="ยังไม่มีสัญญาณเด่น — อินดิเคเตอร์ (RSI / MACD / Bollinger Bands) ยังไม่ชี้อะไรชัดเจนในจังหวะนี้ กดเข้าไปดูรายละเอียดเหรียญได้">—</span>';
+    }
 
     const isHighEarly = eScore >= 75;
     const isAccHi = state.mode === 'acc30' && c._acc && c._acc.qualified;
@@ -3752,17 +3778,23 @@ function wipeAll(){
   location.reload();
 }
 
-/* หัวคอลัมน์ "ตำแหน่งในกรอบ" เปลี่ยนตามช่วงกราฟที่เลือกในตาราง (7ว/30ว) */
-function syncPosHeader(){
+/* หัวคอลัมน์ที่ขึ้นกับช่วงกราฟ เปลี่ยนตามตัวสลับ 7ว/30ว: ตำแหน่งในกรอบ + RSI + สัญญาณอินดิเคเตอร์ */
+function syncRangeHeaders(){
   const th = $('#th-pos30'), lbl = $('#th-pos-label');
-  if (!th || !lbl) return;
-  if (state.sparkRange === '30d'){
-    lbl.textContent = 'ตำแหน่งในกรอบ 30ว';
-    th.title = 'ตำแหน่งราคาปัจจุบันในกรอบ 30 วัน (0% = ที่ Low 30ว, 100% = ที่ High 30ว) — โซนสะสมคือ 15-48% • เปลี่ยนตามช่วงกราฟที่เลือกด้านบนตาราง';
-  } else {
-    lbl.textContent = 'ตำแหน่งในกรอบ 7ว';
-    th.title = 'ตำแหน่งราคาปัจจุบันในกรอบ 7 วัน (0% = ที่ Low 7ว, 100% = ที่ High 7ว) • เปลี่ยนตามช่วงกราฟที่เลือกด้านบนตาราง';
+  if (th && lbl){
+    if (state.sparkRange === '30d'){
+      lbl.textContent = 'ตำแหน่งในกรอบ 30ว';
+      th.title = 'ตำแหน่งราคาปัจจุบันในกรอบ 30 วัน (0% = ที่ Low 30ว, 100% = ที่ High 30ว) — โซนสะสมคือ 15-48% • เปลี่ยนตามช่วงกราฟที่เลือกด้านบนตาราง';
+    } else {
+      lbl.textContent = 'ตำแหน่งในกรอบ 7ว';
+      th.title = 'ตำแหน่งราคาปัจจุบันในกรอบ 7 วัน (0% = ที่ Low 7ว, 100% = ที่ High 7ว) • เปลี่ยนตามช่วงกราฟที่เลือกด้านบนตาราง';
+    }
   }
+  const per = state.sparkRange === '30d' ? 'คำนวณจากกราฟ 30 วัน (แท่งราคา 4 ชม.)' : 'คำนวณจากกราฟ 7 วัน';
+  const rsiTh = $('#th-rsi');
+  if (rsiTh) rsiTh.title = 'RSI (Relative Strength Index) วัดความเร็ว/ความแรงของการเปลี่ยนแปลงราคา ช่วง 0-100 — ' + per + ' • ต่ำกว่า 30 = Oversold, สูงกว่า 70 = Overbought, 30-50 = โซนสะสม • ชี้ที่ตัวเลขเพื่อดูคำอธิบายเฉพาะของเหรียญนี้';
+  const sigTh = $('#th-sig');
+  if (sigTh) sigTh.title = 'ป้ายสัญญาณที่เกิดจริงจากอินดิเคเตอร์ (' + per + ') เช่น BB Squeeze, MACD Golden Cross, RSI ฟื้นจากโซนล่าง, สร้างฐาน, ราคาพุ่งไปแล้ว • ชี้ที่ป้ายเพื่อดูคำอธิบายแต่ละใบ';
 }
 
 /* ==================================================
@@ -3790,7 +3822,47 @@ function switchTab(t){
   }
 }
 
+/* ---- กล่อง tooltip ของแอป — แทน title ดั้งเดิมของเบราว์เซอร์ (โผล่ช้า + ไม่สวย) ----
+   ทุก element ที่มี title จะถูกใช้งานกล่องนี้อัตโนมัติ: โผล่ไวทันทีที่ขยับเมาส์ ตำแหน่งตามเมาส์ ไม่ตกขอบจอ */
+const tsTipState = { el: null, cur: null };
+function hideTsTip(){
+  if (tsTipState.el) tsTipState.el.classList.remove('show');
+  tsTipState.cur = null;
+}
+function initTip(){
+  tsTipState.el = document.createElement('div');
+  tsTipState.el.className = 'ts-tip';
+  document.body.appendChild(tsTipState.el);
+  document.addEventListener('mousemove', e => {
+    const t = e.target && e.target.closest ? e.target.closest('[data-tip],[title]') : null;
+    // โซนที่มี tooltip แบบพิเศษของตัวเองอยู่แล้ว (sparkline / กราฟใน Drawer) → ไม่แสดงกล่องนี้ซ้อน
+    if (!t || t === tsTipState.el || t.closest('.spark-wrap') || t.closest('#dr-chart-wrap')){ hideTsTip(); return; }
+    let txt = t.dataset.tip;
+    if (!txt && t.getAttribute('title')){
+      txt = t.getAttribute('title');
+      t.dataset.tip = txt;
+      t.removeAttribute('title');   // ย้ายเป็น data-tip ครั้งเดียว — กัน tooltip ดั้งเดิมโผล่ซ้อนทีหลัง
+    }
+    if (!txt){ hideTsTip(); return; }
+    if (tsTipState.cur !== t){
+      tsTipState.cur = t;
+      tsTipState.el.innerHTML = esc(txt).replace(/\n/g, '<br>');
+    }
+    let x = e.clientX + 14, y = e.clientY + 16;
+    const r = tsTipState.el.getBoundingClientRect();
+    if (x + r.width > window.innerWidth - 8) x = Math.max(8, e.clientX - r.width - 14);
+    if (y + r.height > window.innerHeight - 8) y = Math.max(8, e.clientY - r.height - 12);
+    tsTipState.el.style.left = x + 'px';
+    tsTipState.el.style.top = y + 'px';
+    tsTipState.el.classList.add('show');
+  }, { passive: true });
+  window.addEventListener('scroll', hideTsTip, true);
+  document.addEventListener('mouseleave', hideTsTip);
+  document.addEventListener('mousedown', hideTsTip);
+}
+
 function wireEvents(){
+  initTip();
   $('#btn-refresh').onclick = () => refreshAll();
   $('#btn-share').onclick = () => shareSite();
   $('#btn-settings').onclick = openSettings;
@@ -3819,11 +3891,11 @@ function wireEvents(){
       state.sparkRange = b.dataset.range;
       const lbl = $('#th-trend-label');
       if (lbl) lbl.textContent = state.sparkRange === '30d' ? 'เทรนด์ 30 วัน' : 'เทรนด์ 7 วัน';
-      syncPosHeader();
+      syncRangeHeaders();
       renderTable();
     };
   });
-  syncPosHeader();   // ตั้งค่าหัวคอลัมน์ "ตำแหน่งในกรอบ" ให้ตรงช่วงกราฟตอนเปิดหน้า
+  syncRangeHeaders();   // ตั้งค่าหัวคอลัมน์ที่ขึ้นกับช่วงกราฟให้ตรงตอนเปิดหน้า
 
   // Filter Toggles
   $('#tog-hide-pumped').onclick = () => {
