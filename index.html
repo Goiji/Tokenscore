@@ -548,7 +548,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
           <th data-k="rsi" title="RSI (Relative Strength Index) จากกราฟ 7 วัน — ต่ำกว่า 30 = Oversold, สูงกว่า 70 = Overbought, 30-50 = โซนสะสม">RSI (14)</th>
           <th title="ป้ายสัญญาณที่เกิดจริงจากอินดิเคเตอร์ (กราฟ 7 วัน) เช่น BB Squeeze, MACD Golden Cross, RSI ฟื้นจากโซนล่าง, สร้างฐาน, ราคาพุ่งไปแล้ว — ดูเกณฑ์ทั้งหมดในหน้ารายละเอียดเหรียญ">สัญญาณอินดิเคเตอร์</th>
           <th id="th-trend" data-k="spark" title="คลิกเพื่อเรียงตาม % เปลี่ยนแปลงของกราฟที่แสดง (ชี้ที่กราฟเพื่อดู Min/Max)"><span id="th-trend-label">เทรนด์ 7 วัน</span><span class="arr"></span></th>
-          <th data-k="pos30" title="ตำแหน่งราคาปัจจุบันในกรอบ 30 วัน (0% = ที่ Low 30ว, 100% = ที่ High 30ว) — โซนสะสมคือ 15-48%">ตำแหน่งในกรอบ 30ว<span class="arr"></span></th>
+          <th data-k="pos30" id="th-pos30" title="ตำแหน่งราคาปัจจุบันในกรอบ 7 วัน (0% = ที่ Low 7ว, 100% = ที่ High 7ว) — เปลี่ยนตามช่วงกราฟที่เลือกด้านบนตาราง"><span id="th-pos-label">ตำแหน่งในกรอบ 7ว</span><span class="arr"></span></th>
           <th data-k="earlyScore" class="th-early" title="คะแนนน่าจับตา (0-100): ราคายังไม่ไล่ยอด 30% • RSI โซนสะสม 25% • MACD กลับตัว 20% • BB Squeeze 15% • สภาพคล่อง 10% — ถ้าราคาพุ่งแรงแล้วจะถูกจำกัดไม่เกิน 45">คะแนนน่าจับตา 🎯<span class="arr"></span></th>
           <th data-k="accScore" class="th-acc" title="คะแนนสะสมพลัง 30 วัน (Accumulation Score 0-100): โครงสร้างฐาน 30% • ตำแหน่งในกรอบ 30% • การเริ่มยก Low 25% • คุณภาพโครงสร้าง 15%">คะแนนสะสม 30ว 📦<span class="arr"></span></th>
           <th data-k="score" title="คะแนนรวม (0-100 + เกรด): จาก % เปลี่ยนแปลง 24ชม./7วัน/30วัน + สภาพคล่อง (วอลุ่ม/มูลค่าตลาด) — เกรด A+ ≥88, A ≥78, B+ ≥68, B ≥58, C ≥48, D ≥35, F ต่ำกว่านั้น (เกณฑ์เดียวกับในหน้ารายละเอียดเหรียญ)">คะแนนรวม ⚡</th>
@@ -2162,12 +2162,13 @@ function renderAccSpotlight(){
 }
 
 /* ---- แถบตำแหน่งในกรอบ 30 วัน (0% = Low 30ว, 100% = High 30ว) ---- */
-function frameBarHTML(m, big=false){
+function frameBarHTML(m, big=false, lbl='30ว'){
   const rate = state.rate;
   const p = clamp(Math.round(m.pos*100), 0, 100);
+  const days = lbl === '7ว' ? '7' : '30';
   if (!big){
-    return `<div class="pos-chip" title="กรอบ 30 วัน: Low ${fmtPrice(m.lo30, rate)} — High ${fmtPrice(m.hi30, rate)} (โซนสะสม 15–48%)">
-      <span class="pos-txt">${p}%<span class="pos-sub">จาก Low 30ว</span></span>
+    return `<div class="pos-chip" title="กรอบ ${days} วัน: Low ${fmtPrice(m.lo30, rate)} — High ${fmtPrice(m.hi30, rate)}${lbl === '30ว' ? ' (โซนสะสม 15–48%)' : ''}">
+      <span class="pos-txt">${p}%<span class="pos-sub">จาก Low ${lbl}</span></span>
       <span class="pos-bar"><i class="pos-dot" style="left:${p}%"></i></span>
     </div>`;
   }
@@ -2175,19 +2176,35 @@ function frameBarHTML(m, big=false){
   return `<div class="framebar-big">
     <div class="framebar-track">
       <i class="framebar-zone z1"></i><i class="framebar-zone z2"></i><i class="framebar-zone z3"></i>
-      <i class="framebar-marker" style="left:${p}%"><span style="${lblPos}">${p}% จาก Low 30ว</span></i>
+      <i class="framebar-marker" style="left:${p}%"><span style="${lblPos}">${p}% จาก Low ${lbl}</span></i>
     </div>
     <div class="framebar-labels">
-      <span>Low 30ว: ${fmtPrice(m.lo30, rate)}</span>
+      <span>Low ${lbl}: ${fmtPrice(m.lo30, rate)}</span>
       <span class="framebar-mid">โซนสะสม 15–48%</span>
-      <span>High 30ว: ${fmtPrice(m.hi30, rate)}</span>
+      <span>High ${lbl}: ${fmtPrice(m.hi30, rate)}</span>
     </div>
   </div>`;
 }
+/* ตำแหน่งในกรอบ "ตามช่วงกราฟที่เลือกในตาราง" — 7ว คำนวณจาก sparkline 7 วัน / 30ว จากโครงสร้างฐาน 30 วัน */
+function posFrameFor(c){
+  if (state.sparkRange === '30d'){
+    const m = c._accM;
+    return m ? { pos: m.pos, lo: m.lo30, hi: m.hi30, lbl: '30ว' } : null;
+  }
+  const p = c.sparkline_in_7d && c.sparkline_in_7d.price;
+  if (!p || p.length < 2) return null;
+  const lo = Math.min(...p), hi = Math.max(...p);
+  const pos = hi > lo ? (p[p.length-1] - lo) / (hi - lo) : 0.5;
+  return { pos, lo, hi, lbl: '7ว' };
+}
 function posChipHTML(c){
-  const m = c._accM;
-  if (!m) return '<span class="spark-loading" title="กำลังทยอยโหลดข้อมูล 30 วันจาก CoinGecko ทีละเหรียญ (กัน rate limit) — ดูความคืบหน้าที่สถานะ 📦 ในแถบด้านบน">⏳ …</span>';
-  return frameBarHTML(m, false);
+  const f = posFrameFor(c);
+  if (!f){
+    return state.sparkRange === '30d'
+      ? '<span class="spark-loading" title="กำลังทยอยโหลดข้อมูล 30 วันจาก CoinGecko ทีละเหรียญ (กัน rate limit) — ดูความคืบหน้าที่สถานะ 📦 ในแถบด้านบน">⏳ …</span>'
+      : '<span class="spark-none" title="ไม่มีข้อมูลกราฟ 7 วันสำหรับเหรียญนี้จากแหล่งข้อมูลปัจจุบัน">—</span>';
+  }
+  return frameBarHTML({ pos: f.pos, lo30: f.lo, hi30: f.hi }, false, f.lbl);
 }
 function accChipHTML(c){
   const s = c._acc;
@@ -2348,7 +2365,7 @@ function renderTable(){
     if (k === 'ath') return (((a.ath_change_percentage ?? 1) - (b.ath_change_percentage ?? 1)) * dir);   // null → 1 ให้ร่วงไปท้ายสุดเสมอ
     if (k === 'rsi') return (((a._analysis&&a._analysis.rsi)||50) - ((b._analysis&&b._analysis.rsi)||50)) * dir;
     if (k === 'spark') return (((a._sparkChg ?? -1e9) - (b._sparkChg ?? -1e9)) * dir);
-    if (k === 'pos30') return (((a._accM ? a._accM.pos : -1) - (b._accM ? b._accM.pos : -1)) * dir);
+    if (k === 'pos30') return (((posFrameFor(a) ? posFrameFor(a).pos : -1) - (posFrameFor(b) ? posFrameFor(b).pos : -1)) * dir);
     if (k === 'earlyScore') return ((a._earlyScore||0) - (b._earlyScore||0)) * dir;
     if (k === 'accScore') return (((a._acc ? a._acc.total : -1) - (b._acc ? b._acc.total : -1)) * dir);
     if (k === 'score') return ((a._quickScore||0) - (b._quickScore||0)) * dir;
@@ -3717,6 +3734,19 @@ function wipeAll(){
   location.reload();
 }
 
+/* หัวคอลัมน์ "ตำแหน่งในกรอบ" เปลี่ยนตามช่วงกราฟที่เลือกในตาราง (7ว/30ว) */
+function syncPosHeader(){
+  const th = $('#th-pos30'), lbl = $('#th-pos-label');
+  if (!th || !lbl) return;
+  if (state.sparkRange === '30d'){
+    lbl.textContent = 'ตำแหน่งในกรอบ 30ว';
+    th.title = 'ตำแหน่งราคาปัจจุบันในกรอบ 30 วัน (0% = ที่ Low 30ว, 100% = ที่ High 30ว) — โซนสะสมคือ 15-48% • เปลี่ยนตามช่วงกราฟที่เลือกด้านบนตาราง';
+  } else {
+    lbl.textContent = 'ตำแหน่งในกรอบ 7ว';
+    th.title = 'ตำแหน่งราคาปัจจุบันในกรอบ 7 วัน (0% = ที่ Low 7ว, 100% = ที่ High 7ว) • เปลี่ยนตามช่วงกราฟที่เลือกด้านบนตาราง';
+  }
+}
+
 /* ==================================================
    Event Wiring
    ================================================== */
@@ -3771,9 +3801,11 @@ function wireEvents(){
       state.sparkRange = b.dataset.range;
       const lbl = $('#th-trend-label');
       if (lbl) lbl.textContent = state.sparkRange === '30d' ? 'เทรนด์ 30 วัน' : 'เทรนด์ 7 วัน';
+      syncPosHeader();
       renderTable();
     };
   });
+  syncPosHeader();   // ตั้งค่าหัวคอลัมน์ "ตำแหน่งในกรอบ" ให้ตรงช่วงกราฟตอนเปิดหน้า
 
   // Filter Toggles
   $('#tog-hide-pumped').onclick = () => {
