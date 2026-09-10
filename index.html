@@ -228,24 +228,24 @@ th.th-acc{background:linear-gradient(180deg,#1c1a46 0%,#0d182e 100%);color:#c084
 
 /* ---------- table ---------- */
 #tbl-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-table{width:100%;border-collapse:collapse;min-width:1300px}
+table{width:100%;border-collapse:collapse;min-width:1180px}
 th{font-size:11.5px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;
-  text-align:right;padding:13px 12px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:#0d182e;cursor:pointer;user-select:none;z-index:2}
+  text-align:right;padding:12px 10px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:#0d182e;cursor:pointer;user-select:none;z-index:2}
 th:first-child,td:first-child{text-align:left}
 th:hover{color:var(--tx)}
 th .arr{font-size:9px;margin-left:3px;color:var(--acc2)}
 th.th-early{background:linear-gradient(180deg,#122544 0%,#0d182e 100%);color:var(--ok)}
-td{padding:12px 12px;border-bottom:1px solid #14223d;text-align:right;white-space:nowrap;font-size:13.5px}
+td{padding:11px 10px;border-bottom:1px solid #14223d;text-align:right;white-space:nowrap;font-size:13.5px}
 td:first-child{text-align:left}
 tbody tr{cursor:pointer;transition:background .12s, transform .12s}
 tbody tr:hover{background:#13203c}
 tbody tr.highlight-early{background:rgba(45,212,167,0.04)}
 tbody tr.highlight-early:hover{background:rgba(45,212,167,0.1)}
 
-.coin-cell{display:flex;align-items:center;gap:10px}
-.coin-cell img{width:28px;height:28px;border-radius:50%;background:#091224;border:1px solid rgba(255,255,255,0.06)}
-.coin-cell .nm{font-weight:700;font-size:14px;color:var(--tx)}
-.coin-cell .sy{color:var(--tx3);font-size:12px;font-weight:600}
+.coin-cell{display:flex;align-items:center;gap:7px}
+.coin-cell img{width:23px;height:23px;border-radius:50%;background:#091224;border:1px solid rgba(255,255,255,0.06);flex:none}
+.coin-cell .nm{font-weight:700;font-size:13.5px;color:var(--tx);max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coin-cell .sy{color:var(--tx3);font-size:11px;font-weight:600}
 .coin-cell .rank-badge{font-size:10.5px;color:var(--tx3);margin-left:4px}
 
 .score-chip{display:inline-flex;flex-direction:column;align-items:flex-end;gap:1px}
@@ -2449,7 +2449,7 @@ function renderTable(){
         <div class="coin-cell">
           <img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
           <div>
-            <div class="nm">${esc(c.name)}</div>
+            <div class="nm" title="${esc(c.name)}">${esc(c.name)}</div>
             <div class="sy">${esc(c.symbol.toUpperCase())}</div>
           </div>
         </div>
