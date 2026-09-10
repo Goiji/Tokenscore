@@ -1415,9 +1415,10 @@ async function cgFetch(path, params, retries = 3){
 
 /* ---- เหรียญที่ตัดออกจากลิสต์ (ปรับได้): ใส่ id ของ CoinGecko หรือ symbol พิมพ์ใหญ่ ---- */
 const EXCLUDED_COIN_IDS = new Set([
-  'ondo-us-dollar-yield'      // Ondo US Dollar Yield (USDY) — ตราสารหนี้โทเคนที่มีผลตอบแทน ไม่ใช่เหรียญที่น่าจับตาในบริบทนี้
+  'ondo-us-dollar-yield',     // Ondo US Dollar Yield (USDY) — ตราสารหนี้โทเคนที่มีผลตอบแทน ไม่ใช่เหรียญที่น่าจับตาในบริบทนี้
+  'figure-heloc'              // Figure Heloc (FIGR_HELOC) — โทเคนสิทธิเงินกู้บ้าน (HELOC) ราคาผูกกับเงินต้นกู้ ~$1 เสมือน stablecoin ไม่ใช่เหรียญที่น่าจับตาในบริบทนี้
 ]);
-const EXCLUDED_COIN_SYMBOLS = new Set(['USDY']);
+const EXCLUDED_COIN_SYMBOLS = new Set(['USDY', 'FIGR_HELOC']);
 function isExcludedCoin(c){
   return EXCLUDED_COIN_IDS.has(c.id) || EXCLUDED_COIN_SYMBOLS.has(String(c.symbol || '').toUpperCase());
 }
@@ -2045,8 +2046,8 @@ function renderSpotlight(){
     const c24 = c.price_change_percentage_24h ?? 0;
     const c7  = c.price_change_percentage_7d_in_currency ?? 0;
 
-    const tagBadges = (an && an.tags) ? an.tags.slice(0, 3).map(t =>
-      `<span class="badge ${t.cls || 'early-tag'}">${t.icon} ${esc(t.text)}</span>`
+    const tagBadges = (an && an.tags && an.tags.length) ? an.tags.slice(0, 3).map(t =>
+      `<span class="badge ${t.cls || 'early-tag'}" title="${esc(TAG_HELP[t.id] || t.text)}">${t.icon} ${esc(t.text)}</span>`
     ).join('') : '';
 
     return `
@@ -2162,6 +2163,17 @@ function renderAccSpotlight(){
 }
 
 /* ---- แถบตำแหน่งในกรอบ 30 วัน (0% = Low 30ว, 100% = High 30ว) ---- */
+/* คำอธิบายป้ายสัญญาณอินดิเคเตอร์แต่ละแบบ — แสดงตอนชี้เมาส์ที่ป้ายในตาราง */
+const TAG_HELP = {
+  squeeze: 'Bollinger Squeeze — กรอบความผันผวน (Bollinger Bands) บีบตัวแคบที่สุดเป็นพิเศษ = ราคาเกาะกลุ่มแน่น ประวัติศาสตร์มักตามด้วยการขยับราคาแรง (เบรกเอาท์) ทิศทางเป็นได้ทั้งขึ้นและลง จึงต้องรอการยืนยันทิศทางก่อน',
+  macd_cross: 'MACD Golden Cross — เส้น MACD (ตัววัดโมเมนตัมราคา) เพิ่งตัดขึ้นเหนือเส้นสัญญาณ เป็นสัญญาณคลาสสิกที่บอกว่าแรงซื้อเพิ่งเอาชนะแรงขายเมื่อเร็ว ๆ นี้',
+  macd_turn: 'MACD แรงขายเบาบางลง — โมเมนตัมยังเป็นลบอยู่ แต่แท่งฮิสโตแกรมเริ่มดีดขึ้นต่อเนื่อง = แรงขายกำลังหมดแรง มีโอกาสพัฒนาเป็นจุดตัดขึ้น (Golden Cross) ถ้าแรงซื้อเข้าต่อ',
+  rsi_oversold: 'RSI Oversold — RSI ต่ำกว่า 30 คือราคาร่วงแรงจนสุดขั้ว สถิติย้อนหลังมักพบการดีดตัวขึ้น (Technical Rebound) แต่ก็อาจไหลต่อได้หากแรงขายยังไม่จบ',
+  rsi_rebound: 'RSI ฟื้นจากโซนล่าง — RSI เพิ่งเด้งขึ้นจากพื้นที่ต่ำ อาการตกต่ำกำลังผ่อนคลาย โมเมนตัมเริ่มที่จะดีขึ้น',
+  base: 'สร้างฐานสะสมพลัง — ราคา 24 ชม. เคลื่อนไหวในกรอบแคบ (-2% ถึง +3%) และ 7 วัน (-6% ถึง +4%) = การพักฐานแบบเงียบ ๆ ไม่มีการไล่ราคา',
+  pumped: 'ราคาพุ่งไปแล้ว — ขยับขึ้นเร็วผิดปกติ (24ชม. เกิน 12% หรือ 7วัน เกิน 35% หรือ RSI เกิน 70) มีความเสี่ยงถูกขายทำกำไรสูง จึงติดป้ายเตือนเรื่องการไล่ราคา',
+  stable: 'Stablecoin / สินทรัพย์ตรึงราคา — ราคาถูกออกแบบให้นิ่งใกล้ระดับหนึ่ง ไม่ใช่เหรียญที่เหมาะกับการเก็งกำไรจังหวะ'
+};
 function frameBarHTML(m, big=false, lbl='30ว'){
   const rate = state.rate;
   const p = clamp(Math.round(m.pos*100), 0, 100);
@@ -2385,15 +2397,21 @@ function renderTable(){
 
     const rsiVal = an ? an.rsi : '—';
     let rsiCls = 'rsi-neutral';
+    let rsiTip = 'RSI (Relative Strength Index) วัดความเร็ว/ความแรงของการเปลี่ยนแปลงราคา ช่วง 0-100 (คำนวณจากกราฟ 7 วัน)';
     if (an){
       if (an.rsi >= 30 && an.rsi <= 50) rsiCls = 'rsi-sweet';
       else if (an.rsi < 30) rsiCls = 'rsi-oversold';
       else if (an.rsi > 68) rsiCls = 'rsi-overbought';
+      const zone = an.rsi < 30 ? 'RSI ต่ำกว่า 30 (Oversold) — ราคาร่วงแรงจนสุดขั้ว มักพบการดีดตัวขึ้นบ้าง แต่ก็อาจไหลต่อได้'
+        : an.rsi <= 50 ? 'RSI 30-50 (โซนสะสม) — แรงขายเบาบาง ราคาพักฐาน เป็นช่วงที่นักวิเคราะห์มักจับตาหาจังหวะ'
+        : an.rsi <= 68 ? 'RSI 50-68 (ฝั่งบวก) — ผู้ซื้อกำลังมีเปรียบ โมเมนตัมเป็นขาขึ้น แต่ยังไม่ร้อนแรง'
+        : 'RSI สูงกว่า 68 (Overbought) — ราคาวิ่งแรงจนร้อน เสี่ยงถูกขายทำกำไร ระวังการไล่ราคา';
+      rsiTip = 'RSI (Relative Strength Index) วัดความเร็ว/ความแรงของการเปลี่ยนแปลงราคา ช่วง 0-100 (คำนวณจากกราฟ 7 วัน)\nค่าของเหรียญนี้: ' + an.rsi + '\n' + zone;
     }
 
-    const tagBadges = (an && an.tags) ? an.tags.slice(0, 2).map(t =>
-      `<span class="badge ${t.cls || 'early-tag'}" title="${esc(t.text)}">${t.icon} ${esc(t.text.split(' ')[0])}</span>`
-    ).join('') : '';
+    const tagBadges = (an && an.tags && an.tags.length) ? an.tags.slice(0, 2).map(t =>
+      `<span class="badge ${t.cls || 'early-tag'}" title="${esc(TAG_HELP[t.id] || t.text)}">${t.icon} ${esc(t.text.split(' ')[0])}</span>`
+    ).join('') : '<span class="spark-none" title="ยังไม่มีสัญญาณเด่น — อินดิเคเตอร์ (RSI / MACD / Bollinger Bands) ยังไม่ชี้อะไรชัดเจนในจังหวะนี้ กดเข้าไปดูรายละเอียดเหรียญได้">—</span>';
 
     const isHighEarly = eScore >= 75;
     const isAccHi = state.mode === 'acc30' && c._acc && c._acc.qualified;
@@ -2416,7 +2434,7 @@ function renderTable(){
       <td class="${pctCls(ch30)}">${pctTxt(ch30)}</td>
       <td class="${athCls(c.ath_change_percentage)}" title="${c.ath != null ? 'ราคาสูงสุดตลอดกาล: ' + fmtPrice(c.ath, rate) + ' ' + sym + (c.ath_date ? ' • ' + athDateTxt(c.ath_date) : '') + (athUpsideTxt(c.ath_change_percentage) ? ' • ถ้าราคากลับไปถึง ATH = ' + athUpsideTxt(c.ath_change_percentage) : '') : 'ไม่มีข้อมูล ATH ในโหมดสำรอง'}">${athTxt(c.ath_change_percentage)}</td>
       <td>${posChipHTML(c)}</td>
-      <td><span class="rsi-pill ${rsiCls}">${rsiVal}</span></td>
+      <td><span class="rsi-pill ${rsiCls}" title="${esc(rsiTip)}">${rsiVal}</span></td>
       <td><div class="sig-cell">${tagBadges}</div></td>
       <td>${sparkCellHTML(c)}</td>
       <td>
