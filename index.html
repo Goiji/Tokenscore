@@ -243,10 +243,13 @@ tbody tr:hover{background:#13203c}
 tbody tr.highlight-early{background:rgba(45,212,167,0.04)}
 tbody tr.highlight-early:hover{background:rgba(45,212,167,0.1)}
 
-.coin-cell{display:flex;align-items:center;gap:7px}
-.coin-cell img{width:23px;height:23px;border-radius:50%;background:#091224;border:1px solid rgba(255,255,255,0.06);flex:none}
-.coin-cell .nm{font-weight:700;font-size:13.5px;color:var(--tx);max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.coin-cell .sy{color:var(--tx3);font-size:11px;font-weight:600}
+.coin-cell{display:flex;align-items:center;gap:8px}
+.coin-cell img{width:22px;height:22px;border-radius:50%;background:#091224;border:1px solid rgba(255,255,255,0.06);flex:none}
+/* ชื่อ + ticker ในบรรทัดเดียว: ชื่อ (ตัดด้วย … ถ้ายาว) แล้ว ticker ลอยชิดขวาของกรอบ 148px
+   เสมอ → ticker ทุกแถวเรียงตรงแนวเดียวกัน ไม่เยื้องตามความยาวชื่อ */
+.coin-cell .cc-txt{display:flex;align-items:baseline;gap:7px;width:148px;min-width:0}
+.coin-cell .nm{flex:0 1 auto;min-width:0;font-weight:700;font-size:13px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coin-cell .sy{flex:none;margin-left:auto;color:var(--tx3);font-size:10.5px;font-weight:700;letter-spacing:.3px}
 .coin-cell .rank-badge{font-size:10.5px;color:var(--tx3);margin-left:4px}
 
 .score-chip{display:inline-flex;flex-direction:column;align-items:flex-end;gap:1px}
@@ -2449,9 +2452,9 @@ function renderTable(){
       <td>
         <div class="coin-cell">
           <img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-          <div>
-            <div class="nm" title="${esc(c.name)}">${esc(c.name)}</div>
-            <div class="sy">${esc(c.symbol.toUpperCase())}</div>
+          <div class="cc-txt">
+            <span class="nm" title="${esc(c.name)}">${esc(c.name)}</span>
+            <span class="sy">${esc(c.symbol.toUpperCase())}</span>
           </div>
         </div>
       </td>
