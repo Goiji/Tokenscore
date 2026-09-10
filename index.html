@@ -296,6 +296,12 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
 .dr-chart-box{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:14px}
 .dr-chart-head{display:flex;align-items:center;font-weight:800;color:var(--tx);font-size:12.5px;margin-bottom:8px}
 .dr-chart-src{margin-left:auto;font-size:10.5px;color:var(--tx3);font-weight:600}
+.dr-chart-ranges{display:flex;gap:4px;margin-left:auto;flex:none}
+.dr-range-btn{padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card2);
+  color:var(--tx2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s ease}
+.dr-range-btn:hover{border-color:var(--acc2);color:var(--tx)}
+.dr-range-btn.active{background:linear-gradient(135deg,rgba(59,99,232,.35),rgba(34,211,238,.25));border-color:var(--acc2);color:#fff}
+.dr-chart-src.with-ranges{margin-left:8px}
 .dr-chart-wrap{position:relative}
 #dr-chart{display:block;max-width:100%;cursor:crosshair}
 .dr-chart-tip{position:absolute;top:4px;background:var(--card2);border:1px solid var(--line-hi);border-radius:8px;
@@ -582,7 +588,14 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
 
       <!-- กราฟราคา 30 วัน -->
       <div class="dr-chart-box hidden" id="dr-chart-box">
-        <div class="dr-chart-head">📈 กราฟราคา 30 วัน <span class="dr-chart-src" id="dr-chart-src"></span></div>
+        <div class="dr-chart-head"><span id="dr-chart-title">📈 กราฟราคา 30 วัน</span>
+          <div class="dr-chart-ranges" role="tablist" aria-label="เลือกช่วงเวลาของกราฟ">
+            <button class="dr-range-btn" data-range="7d" title="กราฟราคาย้อนหลัง 7 วัน">7 วัน</button>
+            <button class="dr-range-btn active" data-range="30d" title="กราฟราคาย้อนหลัง 30 วัน">30 วัน</button>
+            <button class="dr-range-btn" data-range="all" title="กราฟราคาตั้งแต่เหรียญเปิดตัวจนถึงปัจจุบัน">ตลอดกาล</button>
+          </div>
+          <span class="dr-chart-src with-ranges" id="dr-chart-src"></span>
+        </div>
         <div class="dr-chart-wrap" id="dr-chart-wrap">
           <canvas id="dr-chart"></canvas>
           <div class="dr-chart-tip hidden" id="dr-chart-tip"></div>
@@ -2770,6 +2783,12 @@ async function loadCoinAbout(coin){
     else if (coin.id.startsWith('cmc-')) cgId = coin.id.slice(4);   // ลองใช้ slug ของ CMC กับ CG (ตรงกันในกรณีส่วนใหญ่)
     else cgId = coin.id;
   }
+  // เหรียญที่แหล่งข้อมูลไม่มีคำอธิบาย → ยังแสดงกล่องพร้อมลิงก์ไปดูข้อมูลเต็ม (ไม่ซ่อนหายไปเงียบ ๆ)
+  const showNoDesc = () => {
+    txt.textContent = 'ยังไม่มีคำอธิบายสำหรับเหรียญนี้จากแหล่งข้อมูล — ดูข้อมูลเพิ่มเติมได้ที่ลิงก์ด้านล่าง';
+    src.textContent = 'CoinGecko';
+    box.classList.remove('hidden');
+  };
   if (!cgId){ box.classList.add('hidden'); return; }
   const cache = getDescCache();
   const rec = cache[cgId];
@@ -2778,6 +2797,10 @@ async function loadCoinAbout(coin){
     txt.textContent = recT;
     src.textContent = 'CoinGecko (แคชในเครื่อง)';
     box.classList.remove('hidden');
+    return;
+  }
+  if (rec && rec.lang === 'none'){
+    showNoDesc();   // เคยตรวจแล้วว่าไม่มีคำอธิบาย — ไม่ต้องยิง API ซ้ำทุกครั้งที่เปิด
     return;
   }
   // ยังไม่มีข้อความไทย → ดึงจาก CoinGecko (หรือใช้ข้อความอังกฤษที่แคชไว้) แล้วแปลเป็นไทย
@@ -2809,7 +2832,12 @@ async function loadCoinAbout(coin){
       }
       enText = stripHtml(d.en);
     }
-    if (!enText){ box.classList.add('hidden'); return; }
+    if (!enText || enText.length < 40){
+      // แหล่งข้อมูลไม่มีคำอธิบายสำหรับเหรียญนี้ (เหรียญใหม่/เหรียญเล็ก) — แสดงกล่องแทนการหายไป
+      saveCache('', 'none');
+      showNoDesc();
+      return;
+    }
     if (my !== aboutToken) return;
     txt.textContent = '⏳ กำลังแปลคำอธิบายเป็นภาษาไทย...';
     const thai = await translateToThai(enText);
@@ -2828,7 +2856,10 @@ async function loadCoinAbout(coin){
     }
   } catch(e){
     if (my !== aboutToken) return;
-    box.classList.add('hidden');   // โหลดไม่ได้ (เช่น CoinGecko ล่ม) → ซ่อนเงียบ ๆ ไม่กระทบส่วนอื่น
+    // โหลดไม่สำเร็จชั่วคราว (เช่น ติด rate limit) — ยังคงแสดงกล่องพร้อมแจ้งสถานะ ไม่ให้หายไปเงียบ ๆ
+    txt.textContent = '⏳ โหลดคำอธิบายไม่สำเร็จชั่วคราว (อาจติด rate limit) — ลองปิด-เปิดหน้าต่างนี้อีกครั้ง';
+    src.textContent = '';
+    box.classList.remove('hidden');
   }
 }
 
@@ -2884,6 +2915,7 @@ function openDrawer(coinId){
   $('#dr-about-src').textContent = '';
   $('#dr-chart-box').classList.add('hidden');
   detailChart = null;
+  detailRange = '30d';
   loadDetail();
   loadCoinAbout(coin);
 }
@@ -2979,19 +3011,84 @@ async function loadDetail(){
 }
 
 /* ---- กราฟราคา 30 วันใน Drawer (วาดจากข้อมูล OHLC เดียวกับที่ใช้วิเคราะห์) ---- */
-let detailChart = null;   // { ohlc, hover } — เก็บสถานะกราฟปัจจุบันไว้ใช้ตอน hover
+let detailChart = null;   // { ohlc(30ว), all(ตลอดกาล), hover } — สถานะกราฟปัจจุบัน
+let detailRange = '30d';  // ช่วงที่กำลังแสดง: '7d' | '30d' | 'all'
+const allChartCache = new Map();   // coinId → [ts,o,h,l,c] ตลอดกาล (โหลดครั้งเดียวต่อเหรียญต่อการเปิดหน้า)
+const RANGE_LABELS = { '7d': '📈 กราฟราคา 7 วัน', '30d': '📈 กราฟราคา 30 วัน', 'all': '📈 กราฟราคาตลอดกาล (All-Time)' };
+
+function chartDataForRange(){
+  if (!detailChart) return null;
+  if (detailRange === '7d') return detailChart.ohlc.slice(-42);      // 42 แท่ง 4h = 7 วัน
+  if (detailRange === 'all') return detailChart.all || detailChart.ohlc;
+  return detailChart.ohlc;
+}
+function setDetailRange(r){
+  detailRange = r;
+  $$('.dr-range-btn').forEach(b => b.classList.toggle('active', b.dataset.range === r));
+  const t = $('#dr-chart-title');
+  if (t) t.textContent = RANGE_LABELS[r] || RANGE_LABELS['30d'];
+  if (r === 'all' && detailChart && !detailChart.all && state.detail){
+    loadAllTimeChart(state.detail);   // ยังไม่มีข้อมูลตลอดกาล → โหลด (ระหว่างรอยังวาดกราฟ 30 วันอยู่)
+  } else {
+    drawDetailChart();
+  }
+}
+async function loadAllTimeChart(coin){
+  if (!detailChart || !coin) return;
+  const src = $('#dr-chart-src');
+  const prevSrc = src ? src.textContent : '';
+  if (src) src.textContent = '⏳ กำลังโหลดข้อมูลตลอดกาล...';
+  let arr = allChartCache.get(coin.id) || null;
+  if (!arr){
+    // 1) CoinGecko market_chart days=max (ราคาทั้งประวัติ)
+    let cgId = coin.id;
+    if (cgId && cgId.startsWith('cmc-')) cgId = cgId.slice(4);
+    if (cgId && !cgId.startsWith('bin-')){
+      try {
+        const js = await cgFetch('/coins/' + encodeURIComponent(cgId) + '/market_chart', { vs_currency:'usd', days:'max' }, 2);
+        const prices = (js && Array.isArray(js.prices)) ? js.prices : [];
+        if (prices.length > 30){
+          // ลดจำนวนจุดเหลือ ≤1600 ให้วาดเร็ว (คงจุดแรก-สุดท้าย และสุ่มแบบรักษาสัดส่วน)
+          const step = Math.max(1, Math.ceil(prices.length / 1600));
+          arr = prices.filter((_, i) => i % step === 0 || i === prices.length - 1)
+                      .map(p => [p[0], p[1], p[1], p[1], p[1]]);
+        }
+      } catch(e){}
+    }
+    // 2) สำรอง: Binance klines รายเดือน (1M) ตั้งแต่เปิดคู่เทรด
+    if (!arr){
+      const sym = String(coin.symbol || '').toUpperCase();
+      const pair = coin._pair || (sym ? sym + 'USDT' : null);
+      if (pair){
+        try {
+          const k = await bFetch('/api/v3/klines', { symbol: pair, interval: '1M', limit: 1000 });
+          if (Array.isArray(k) && k.length > 10){
+            arr = k.map(x => [x[0], +x[4], +x[2], +x[3], +x[4]]);
+          }
+        } catch(e){}
+      }
+    }
+    if (arr) allChartCache.set(coin.id, arr);
+  }
+  if (src) src.textContent = prevSrc;
+  // ผู้ใช้อาจปิด/สลับเหรียญไปแล้ว หรือกดกลับ 30 วัน — วาดเฉพาะเมื่อยังสนใจข้อมูลนี้อยู่
+  if (detailChart && state.detail === coin && detailRange === 'all'){
+    if (arr){ detailChart.all = arr; drawDetailChart(); }
+    else if (src){ src.textContent = 'โหลดข้อมูลตลอดกาลไม่สำเร็จ (แสดง 30 วัน)'; }
+  }
+}
 function renderDetailChart(ohlc, srcLabel){
   const box = $('#dr-chart-box');
   if (!box || !ohlc || ohlc.length < 2){ if (box) box.classList.add('hidden'); return; }
-  detailChart = { ohlc, hover: -1 };
+  detailChart = { ohlc, all: allChartCache.get(state.detail ? state.detail.id : '') || null, hover: -1 };
   $('#dr-chart-src').textContent = srcLabel || '';
+  setDetailRange(detailRange);   // คงช่วงที่ผู้ใช้เลือกไว้ (ปุ่ม/หัวข้อ/ข้อมูลตามช่วง)
   box.classList.remove('hidden');
-  drawDetailChart();
 }
 function drawDetailChart(){
   const cv = $('#dr-chart');
   if (!cv || !detailChart) return;
-  const ohlc = detailChart.ohlc;
+  const ohlc = chartDataForRange() || detailChart.ohlc;
   const wrap = $('#dr-chart-wrap');
   const dpr = window.devicePixelRatio || 1;
   const w = Math.max(320, (wrap && wrap.getBoundingClientRect().width) || parseFloat(cv.style.width) || 640);
@@ -3035,7 +3132,12 @@ function drawDetailChart(){
   ctx.fillStyle = '#22d3ee';
   ctx.beginPath(); ctx.arc(X(closes.length - 1), Y(closes[closes.length - 1]), 3, 0, Math.PI * 2); ctx.fill();
   // ป้ายวันที่หัว-ท้าย
-  const fdate = ts => { const d = new Date(ts); return isNaN(d) ? '' : d.toLocaleDateString('th-TH', { day:'numeric', month:'short' }); };
+  const fdate = ts => {
+    const d = new Date(ts);
+    if (isNaN(d)) return '';
+    // ช่วงตลอดกาลแสดงปีด้วย (ข้อมูลย้อนหลังหลายปี) — ช่วงสั้นแสดงแค่วัน/เดือน
+    return d.toLocaleDateString('th-TH', detailRange === 'all' ? { year:'2-digit', month:'short' } : { day:'numeric', month:'short' });
+  };
   ctx.fillStyle = '#6278a3';
   ctx.textAlign = 'left'; ctx.fillText(fdate(ohlc[0][0]), padL, h - 6);
   ctx.textAlign = 'right'; ctx.fillText(fdate(ohlc[ohlc.length - 1][0]), padL + iw, h - 6);
@@ -3056,17 +3158,18 @@ function detailChartHover(clientX){
   const w = r.width || parseFloat(cv.style.width) || 640;
   const padL = 8, padR = 64;
   const iw = w - padL - padR;
-  const n = detailChart.ohlc.length;
+  const data = chartDataForRange() || detailChart.ohlc;
+  const n = data.length;
   if (iw <= 0 || n < 2) return;
   let i = Math.round(((clientX - r.left - padL) / iw) * (n - 1));
   i = Math.max(0, Math.min(n - 1, i));
   detailChart.hover = i;
   drawDetailChart();
   const tip = $('#dr-chart-tip');
-  const b = detailChart.ohlc[i];
+  const b = data[i];
   const d = new Date(b[0]);
   const dTxt = isNaN(d) ? '' : d.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' }) + ' ' + d.toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }) + ' น.';
-  const chg = detailChart.ohlc[0][4] ? (b[4] / detailChart.ohlc[0][4] - 1) * 100 : 0;
+  const chg = data[0][4] ? (b[4] / data[0][4] - 1) * 100 : 0;
   tip.innerHTML = '<b>' + fmtPrice(b[4], state.rate) + ' ' + curSym() + '</b> <span class="' + pctCls(chg) + '">' + pctTxt(chg) + '</span><br>'
     + '<span class="tip-sub">' + esc(dTxt) + ' • สูงสุด ' + fmtPrice(b[2], state.rate) + ' • ต่ำสุด ' + fmtPrice(b[3], state.rate) + '</span>';
   tip.classList.remove('hidden');
@@ -3908,6 +4011,7 @@ function wireEvents(){
     drChart.addEventListener('mousemove', e => detailChartHover(e.clientX));
     drChart.addEventListener('mouseleave', detailChartLeave);
   }
+  $$('.dr-range-btn').forEach(b => b.onclick = () => setDetailRange(b.dataset.range));
   $('#overlay').onclick = closeDrawer;
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape'){ closeDrawer(); closeSettings(); $('#modal-pin').classList.add('hidden'); }
