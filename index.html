@@ -755,6 +755,13 @@ function pctCls(v){ return v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'flat'; }
 function pctTxt(v){ return (v>0?'+':'') + round(v,1) + '%'; }
 function athTxt(v){ return (v === null || v === undefined) ? '—' : (v>0?'+':'') + round(v,1) + '%'; }
 function athCls(v){ return (v === null || v === undefined) ? 'ath-near' : v <= -70 ? 'ath-deep' : v <= -30 ? 'ath-mid' : 'ath-near'; }
+function athUpsideTxt(p){   // p = % จาก ATH (ติดลบ) → ตัวเลขอัพไซด์ถ้าราคากลับไปถึง ATH
+  if (p === null || p === undefined || p >= 0) return null;
+  const base = 1 + p/100;
+  if (base <= 0) return null;
+  const up = (1/base - 1) * 100;
+  return (up >= 1000 ? '+' + Math.round(up) : '+' + round(up,1)) + '%';
+}
 function athDateTxt(iso){
   try {
     const d = new Date(iso);
@@ -2538,7 +2545,7 @@ function renderTable(){
       <td class="${pctCls(ch24)}"><b>${pctTxt(ch24)}</b></td>
       <td class="${pctCls(ch7)}">${pctTxt(ch7)}</td>
       <td class="${pctCls(ch30)}">${pctTxt(ch30)}</td>
-      <td class="${athCls(c.ath_change_percentage)}" title="${c.ath != null ? 'ราคาสูงสุดตลอดกาล: ' + fmtPrice(c.ath, rate) + ' ' + sym + (c.ath_date ? ' • ' + athDateTxt(c.ath_date) : '') : 'ไม่มีข้อมูล ATH ในโหมดสำรอง'}">${athTxt(c.ath_change_percentage)}</td>
+      <td class="${athCls(c.ath_change_percentage)}" title="${c.ath != null ? 'ราคาสูงสุดตลอดกาล: ' + fmtPrice(c.ath, rate) + ' ' + sym + (c.ath_date ? ' • ' + athDateTxt(c.ath_date) : '') + (athUpsideTxt(c.ath_change_percentage) ? ' • ถ้าราคากลับไปถึง ATH = ' + athUpsideTxt(c.ath_change_percentage) : '') : 'ไม่มีข้อมูล ATH ในโหมดสำรอง'}">${athTxt(c.ath_change_percentage)}</td>
       <td>${posChipHTML(c)}</td>
       <td><span class="rsi-pill ${rsiCls}">${rsiVal}</span></td>
       <td><div class="sig-cell">${tagBadges}</div></td>
@@ -2711,7 +2718,9 @@ function openDrawer(coinId){
   chEl.className = pctCls(ch24);
   const athEl = $('#dr-ath');
   if (coin.ath_change_percentage !== null && coin.ath_change_percentage !== undefined){
+    const upTxt = athUpsideTxt(coin.ath_change_percentage);
     athEl.innerHTML = 'จาก ATH: <b class="' + athCls(coin.ath_change_percentage) + '">' + athTxt(coin.ath_change_percentage) + '</b>'
+      + (upTxt ? ' <span title="ตัวเลขอ้างอิงเชิงคณิตศาสตร์ — ไม่ได้การันตีว่าราคาจะกลับไปถึงจุดนั้น">(อัพไซด์ถึง ATH ' + upTxt + ')</span>' : '')
       + (coin.ath != null ? ' <span title="ราคาสูงสุดตลอดกาล">(สูงสุด ' + fmtPrice(coin.ath, state.rate) + ' ' + curSym() + (coin.ath_date ? ' • ' + esc(athDateTxt(coin.ath_date)) : '') + ')</span>' : '');
   } else {
     athEl.textContent = '';
