@@ -263,6 +263,10 @@ tbody tr.highlight-early:hover{background:rgba(45,212,167,0.1)}
 
 .mini-spark{width:70px;height:26px;opacity:.95}
 .rank-no{color:var(--tx3);font-weight:700;font-size:12.5px}
+/* ---------- คอลัมน์ระยะจาก ATH ---------- */
+.ath-deep{color:var(--purple);font-weight:700}
+.ath-mid{color:var(--acc2);font-weight:600}
+.ath-near{color:var(--tx2)}
 .loading-row td{text-align:center;color:var(--tx3);padding:40px}
 footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
 /* ---------- แถวปุ่มแชร์/ติดตาม (footer) ---------- */
@@ -504,6 +508,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
           <th data-k="c24">24ชม.</th>
           <th data-k="c7">7วัน</th>
           <th data-k="c30">30วัน</th>
+          <th data-k="ath" title="ระยะห่างจากราคาสูงสุดตลอดกาล (ATH — All-Time High) เช่น -75% คือราคาปัจจุบันต่ำกว่าจุดสูงสุดตลอดกาล 75% (เชิงข้อมูลอ้างอิง ไม่ได้การันตีว่าราคาจะกลับไปถึงจุดนั้น)">จาก ATH<span class="arr"></span></th>
           <th data-k="rsi">RSI (14)</th>
           <th>สัญญาณอินดิเคเตอร์</th>
           <th id="th-trend" data-k="spark" title="คลิกเพื่อเรียงตาม % เปลี่ยนแปลงของกราฟที่แสดง (ชี้ที่กราฟเพื่อดู Min/Max)"><span id="th-trend-label">เทรนด์ 7 วัน</span><span class="arr"></span></th>
@@ -542,6 +547,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
     <div style="text-align:right">
       <div id="dr-price" style="font-weight:800;font-size:16px">—</div>
       <div id="dr-chg">—</div>
+      <div id="dr-ath" style="font-size:11px;color:var(--tx3);margin-top:2px"></div>
     </div>
     <button class="btn icon" id="dr-close" title="ปิด">✕</button>
   </div>
@@ -747,6 +753,15 @@ function fmtPrice(n, rate=1){
 const CUR = { USD:{sym:'$', rate:1}, THB:{sym:'฿', rate:1} };
 function pctCls(v){ return v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'flat'; }
 function pctTxt(v){ return (v>0?'+':'') + round(v,1) + '%'; }
+function athTxt(v){ return (v === null || v === undefined) ? '—' : (v>0?'+':'') + round(v,1) + '%'; }
+function athCls(v){ return (v === null || v === undefined) ? 'ath-near' : v <= -70 ? 'ath-deep' : v <= -30 ? 'ath-mid' : 'ath-near'; }
+function athDateTxt(iso){
+  try {
+    const d = new Date(iso);
+    if (!iso || isNaN(d)) return '';
+    return d.toLocaleDateString('th-TH', { year:'numeric', month:'short' });
+  } catch(e){ return String(iso || '').slice(0, 10); }
+}
 function fmtDT(ts){
   const d = new Date(ts);
   const t = d.toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
@@ -1533,6 +1548,10 @@ async function loadMarketsCMC(){
       price_change_percentage_30d_in_currency: q.percent_change_30d ?? 0,
       // CMC แผนฟรีไม่มี sparkline — ใช้กราฟชุดล่าสุดที่มีจาก CoinGecko (ถ้ามี)
       sparkline_in_7d: (prev && prev.sparkline_in_7d) ? prev.sparkline_in_7d : null,
+      // CMC listings ไม่มีข้อมูล ATH — สืบทอดจากชุดล่าสุดที่ได้จาก CoinGecko (ถ้ามี)
+      ath: prev ? prev.ath ?? null : null,
+      ath_change_percentage: prev ? prev.ath_change_percentage ?? null : null,
+      ath_date: prev ? prev.ath_date ?? null : null,
       _fromCMC: true
     };
   });
@@ -1597,6 +1616,9 @@ async function loadMarketsBinance(){
       name: prev ? prev.name : s,
       image: prev ? prev.image : '',
       market_cap_rank: prev ? prev.market_cap_rank : null,
+      ath: prev ? prev.ath ?? null : null,
+      ath_change_percentage: prev ? prev.ath_change_percentage ?? null : null,
+      ath_date: prev ? prev.ath_date ?? null : null,
       current_price: parseFloat(pair.lastPrice) || 0,
       total_volume: parseFloat(pair.quoteVolume) || 0,
       market_cap: prev ? prev.market_cap : null,
@@ -1959,6 +1981,7 @@ function buildAIPrompt(coin, d, score){
 
 ข้อมูลสินทรัพย์:
 - เหรียญ: ${coin.name} (${coin.symbol.toUpperCase()}) Market Cap Rank: ${coin.market_cap_rank ? "#" + coin.market_cap_rank : "N/A (โหมดสำรอง Binance ไม่มีข้อมูลอันดับ)"}
+- ระยะจาก ATH (All-Time High): ${coin.ath_change_percentage != null ? round(coin.ath_change_percentage,1) + '% จากจุดสูงสุดตลอดกาล' + (coin.ath != null ? ' (' + fmtPrice(coin.ath, 1) + ' USD' + (coin.ath_date ? ' เมื่อ ' + String(coin.ath_date).slice(0,10) : '') + ')' : '') : 'ไม่มีข้อมูล'}
 - ราคาปัจจุบัน: ${fmtPrice(coin.current_price, rate)} ${cur}
 - การเปลี่ยนแปลง: 24ชม. ${pctTxt(coin.price_change_percentage_24h ?? 0)} | 7วัน ${pctTxt(coin.price_change_percentage_7d_in_currency ?? 0)} | 30วัน ${pctTxt(coin.price_change_percentage_30d_in_currency ?? 0)}
 - คะแนนน่าจับตา (Watchlist Score): ${earlyScore}/100
@@ -2463,6 +2486,7 @@ function renderTable(){
     if (k === 'c24') return ((a.price_change_percentage_24h||0) - (b.price_change_percentage_24h||0)) * dir;
     if (k === 'c7') return ((a.price_change_percentage_7d_in_currency||0) - (b.price_change_percentage_7d_in_currency||0)) * dir;
     if (k === 'c30') return ((a.price_change_percentage_30d_in_currency||0) - (b.price_change_percentage_30d_in_currency||0)) * dir;
+    if (k === 'ath') return (((a.ath_change_percentage ?? 1) - (b.ath_change_percentage ?? 1)) * dir);   // null → 1 ให้ร่วงไปท้ายสุดเสมอ
     if (k === 'rsi') return (((a._analysis&&a._analysis.rsi)||50) - ((b._analysis&&b._analysis.rsi)||50)) * dir;
     if (k === 'spark') return (((a._sparkChg ?? -1e9) - (b._sparkChg ?? -1e9)) * dir);
     if (k === 'pos30') return (((a._accM ? a._accM.pos : -1) - (b._accM ? b._accM.pos : -1)) * dir);
@@ -2514,6 +2538,7 @@ function renderTable(){
       <td class="${pctCls(ch24)}"><b>${pctTxt(ch24)}</b></td>
       <td class="${pctCls(ch7)}">${pctTxt(ch7)}</td>
       <td class="${pctCls(ch30)}">${pctTxt(ch30)}</td>
+      <td class="${athCls(c.ath_change_percentage)}" title="${c.ath != null ? 'ราคาสูงสุดตลอดกาล: ' + fmtPrice(c.ath, rate) + ' ' + sym + (c.ath_date ? ' • ' + athDateTxt(c.ath_date) : '') : 'ไม่มีข้อมูล ATH ในโหมดสำรอง'}">${athTxt(c.ath_change_percentage)}</td>
       <td>${posChipHTML(c)}</td>
       <td><span class="rsi-pill ${rsiCls}">${rsiVal}</span></td>
       <td><div class="sig-cell">${tagBadges}</div></td>
@@ -2532,7 +2557,7 @@ function renderTable(){
         </span>
       </td>
     </tr>`;
-  }).join('') || '<tr class="loading-row"><td colspan="13">ไม่พบเหรียญที่ตรงตามเงื่อนไขตัวกรอง</td></tr>';
+  }).join('') || '<tr class="loading-row"><td colspan="14">ไม่พบเหรียญที่ตรงตามเงื่อนไขตัวกรอง</td></tr>';
 }
 
 /* ---------------- Drawer ---------------- */
@@ -2684,6 +2709,13 @@ function openDrawer(coinId){
   const chEl = $('#dr-chg');
   chEl.textContent = pctTxt(ch24) + ' (24ชม.)';
   chEl.className = pctCls(ch24);
+  const athEl = $('#dr-ath');
+  if (coin.ath_change_percentage !== null && coin.ath_change_percentage !== undefined){
+    athEl.innerHTML = 'จาก ATH: <b class="' + athCls(coin.ath_change_percentage) + '">' + athTxt(coin.ath_change_percentage) + '</b>'
+      + (coin.ath != null ? ' <span title="ราคาสูงสุดตลอดกาล">(สูงสุด ' + fmtPrice(coin.ath, state.rate) + ' ' + curSym() + (coin.ath_date ? ' • ' + esc(athDateTxt(coin.ath_date)) : '') + ')</span>' : '');
+  } else {
+    athEl.textContent = '';
+  }
   $('#overlay').classList.remove('hidden');
   $('#drawer').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
@@ -3609,7 +3641,7 @@ function wireEvents(){
       const k = th.dataset.k;
       if (!k || k === 'name') return;
       if (state.sort.k === k) state.sort.dir *= -1;
-      else { state.sort.k = k; state.sort.dir = (k === 'rank') ? 1 : -1; }
+      else { state.sort.k = k; state.sort.dir = (k === 'rank' || k === 'ath') ? 1 : -1; }   // 'ath' คลิกแรก = ติดลบลึกสุดขึ้นก่อน
       syncSortArrows();
       renderTable();
     };
