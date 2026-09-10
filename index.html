@@ -482,6 +482,22 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
   .grid2{grid-template-columns:1fr}
   .ring-wrap{justify-content:center;text-align:center}
   #drawer{width:100vw}
+  /* หัวหน้าต่างรายละเอียดเหรียญกระชับ — เดิม (ชื่อ+ลิงก์ 3-4 บรรทัด + ราคา 3 บรรทัด + แท็บ)
+     กินพื้นที่ตายเกือบครึ่งจอ เหลือพื้นที่เลื่อนดูเนื้อหาแค่ครึ่งล่าง */
+  .dr-head{padding:10px 12px;gap:9px}
+  .dr-head img{width:28px;height:28px}
+  .dr-head>div:first-of-type{min-width:0}      /* ให้ชื่อยาวตัด … ได้ */
+  .dr-head .nm{font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dr-head .sy{font-size:10.5px;line-height:1.55}
+  .dr-head .sy .dr-cg{font-size:10.5px;margin-left:4px}
+  .dr-head .sy .dr-share{font-size:10.5px;padding:1px 8px;margin-left:4px}
+  .dr-head .btn.icon{padding:5px 8px}          /* ปุ่ม ✕ เล็กลง */
+  #dr-price{font-size:14px !important}         /* ชน inline style ต้อง !important */
+  #dr-chg{font-size:11.5px}
+  #dr-ath{font-size:10px !important;margin-top:1px !important}
+  .dr-tabs{padding:9px 12px 0 !important;margin-bottom:10px !important}
+  .dr-tab{padding:7px 8px;font-size:12.5px}
+  .dr-body{padding:12px 14px 24px}
 }
 </style>
 </head>
