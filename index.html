@@ -311,6 +311,13 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
 .lt-dot{position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid var(--acc);box-shadow:0 0 0 3px rgba(79,124,255,.25);z-index:1}
 .lt-cap{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:var(--tx3);flex-wrap:wrap}
 .lt-sum{background:var(--card2);border-left:3px solid var(--acc2);border-radius:8px;padding:10px 12px;margin-top:12px;font-size:13px;line-height:1.7}
+.ss-head{font-size:12px;color:var(--tx2);font-weight:700;margin-bottom:2px;line-height:1.6}
+.score-guide{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:4px 0 14px}
+.score-guide summary{cursor:pointer;font-size:13px;font-weight:800;color:var(--tx2);user-select:none}
+.score-guide summary:hover{color:var(--tx)}
+.score-guide .sg-body{font-size:12.5px;color:var(--tx2);line-height:1.8;margin-top:8px}
+.score-guide .sg-body p{margin:0 0 10px}
+.score-guide .sg-sub{color:var(--tx3);font-size:11.5px}
 .dr-chart-wrap{position:relative}
 #dr-chart{display:block;max-width:100%;cursor:crosshair}
 .dr-chart-tip{position:absolute;top:4px;background:var(--card2);border:1px solid var(--line-hi);border-radius:8px;
@@ -363,7 +370,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
 .ring-head .meta{color:var(--tx3);font-size:12px;margin-top:6px}
 
 .subscore{display:flex;flex-direction:column;gap:8px;margin:14px 0}
-.subscore .row{display:grid;grid-template-columns:120px 1fr 44px;gap:10px;align-items:center;font-size:12.5px}
+.subscore .row{display:grid;grid-template-columns:170px 1fr 44px;gap:10px;align-items:center;font-size:12.5px}
 .subscore .nm{color:var(--tx2);font-weight:600}
 .subscore .bar{height:7px;background:#0d1930;border-radius:99px;overflow:hidden}
 .subscore .bar i{display:block;height:100%;border-radius:99px;transition:width .6s}
@@ -538,13 +545,13 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
           <th data-k="c7">7วัน</th>
           <th data-k="c30">30วัน</th>
           <th data-k="ath" title="ระยะห่างจากราคาสูงสุดตลอดกาล (ATH — All-Time High) เช่น -75% คือราคาปัจจุบันต่ำกว่าจุดสูงสุดตลอดกาล 75% (เชิงข้อมูลอ้างอิง ไม่ได้การันตีว่าราคาจะกลับไปถึงจุดนั้น)">จาก ATH<span class="arr"></span></th>
-          <th data-k="rsi">RSI (14)</th>
-          <th>สัญญาณอินดิเคเตอร์</th>
+          <th data-k="rsi" title="RSI (Relative Strength Index) จากกราฟ 7 วัน — ต่ำกว่า 30 = Oversold, สูงกว่า 70 = Overbought, 30-50 = โซนสะสม">RSI (14)</th>
+          <th title="ป้ายสัญญาณที่เกิดจริงจากอินดิเคเตอร์ (กราฟ 7 วัน) เช่น BB Squeeze, MACD Golden Cross, RSI ฟื้นจากโซนล่าง, สร้างฐาน, ราคาพุ่งไปแล้ว — ดูเกณฑ์ทั้งหมดในหน้ารายละเอียดเหรียญ">สัญญาณอินดิเคเตอร์</th>
           <th id="th-trend" data-k="spark" title="คลิกเพื่อเรียงตาม % เปลี่ยนแปลงของกราฟที่แสดง (ชี้ที่กราฟเพื่อดู Min/Max)"><span id="th-trend-label">เทรนด์ 7 วัน</span><span class="arr"></span></th>
           <th data-k="pos30" title="ตำแหน่งราคาปัจจุบันในกรอบ 30 วัน (0% = ที่ Low 30ว, 100% = ที่ High 30ว) — โซนสะสมคือ 15-48%">ตำแหน่งในกรอบ 30ว<span class="arr"></span></th>
-          <th data-k="earlyScore" class="th-early">คะแนนน่าจับตา 🎯<span class="arr"></span></th>
+          <th data-k="earlyScore" class="th-early" title="คะแนนน่าจับตา (0-100): ราคายังไม่ไล่ยอด 30% • RSI โซนสะสม 25% • MACD กลับตัว 20% • BB Squeeze 15% • สภาพคล่อง 10% — ถ้าราคาพุ่งแรงแล้วจะถูกจำกัดไม่เกิน 45">คะแนนน่าจับตา 🎯<span class="arr"></span></th>
           <th data-k="accScore" class="th-acc" title="คะแนนสะสมพลัง 30 วัน (Accumulation Score 0-100): โครงสร้างฐาน 30% • ตำแหน่งในกรอบ 30% • การเริ่มยก Low 25% • คุณภาพโครงสร้าง 15%">คะแนนสะสม 30ว 📦<span class="arr"></span></th>
-          <th data-k="score">คะแนนรวม ⚡</th>
+          <th data-k="score" title="คะแนนรวม (0-100 + เกรด): จาก % เปลี่ยนแปลง 24ชม./7วัน/30วัน + สภาพคล่อง (วอลุ่ม/มูลค่าตลาด) — เกรด A+ ≥88, A ≥78, B+ ≥68, B ≥58, C ≥48, D ≥35, F ต่ำกว่านั้น (เกณฑ์เดียวกับในหน้ารายละเอียดเหรียญ)">คะแนนรวม ⚡</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -607,6 +614,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
         <div class="dr-chart-wrap" id="dr-chart-wrap">
           <canvas id="dr-chart"></canvas>
           <div class="dr-chart-tip hidden" id="dr-chart-tip"></div>
+          <div class="hint hidden" id="dr-chart-note" style="margin:8px 0 0"></div>
         </div>
       </div>
 
@@ -636,6 +644,30 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
       <div class="ring-wrap" id="ring-area"><span class="hint">กำลังโหลดข้อมูลกราฟ 30 วัน...</span></div>
       <div class="subscore" id="subscore"></div>
       <div class="grid-ind" id="grid-ind"></div>
+
+      <details class="score-guide" id="score-guide">
+        <summary>📚 คะแนนแต่ละตัวในระบบคำนวณจากอะไร?</summary>
+        <div class="sg-body">
+          <p><b>⚡ คะแนนรวม (0–100 + เกรด A+ ถึง F)</b> — ใช้เทียบภาพรวมระยะสั้น-กลางระหว่างเหรียญ (เกรดในตารางกับในหน้านี้ใช้สูตรเดียวกัน)
+          เริ่มที่ 50 คะแนน แล้วปรับด้วย: การเปลี่ยนแปลงราคา <b>24 ชม.</b> (บวก/ลบได้ถึง ~10 คะแนน), <b>7 วัน</b> (~10), <b>30 วัน</b> (~7.5)
+          และ<b>สภาพคล่อง</b> = วอลุ่ม 24 ชม. เทียบมูลค่าตลาด (บวกได้ถึง 12 — ยิ่งเงินหมุนเร็วยิ่งเข้าไม้ง่าย)<br>
+          <span class="sg-sub">เกรด: A+ ≥ 88 • A ≥ 78 • B+ ≥ 68 • B ≥ 58 • C ≥ 48 • D ≥ 35 • ต่ำกว่านั้น F</span></p>
+          <p><b>🎯 คะแนนน่าจับตา (0–100)</b> — ตอบคำถาม "ราคายังไม่พุ่งแต่สัญญาณกำลังดีหรือยัง" ประกอบด้วย:
+          ราคายังไม่ไล่ยอดดอย <b>30%</b> (24ชม. ใน ±3% และ 7วัน −8% ถึง +5% = คะแนนเต็ม) • RSI โซนสะสม <b>25%</b> (RSI 30–46 ดีที่สุด) •
+          MACD กำลังกลับตัวบวก <b>20%</b> • Bollinger Squeeze / ราคาใกล้แนวรับ <b>15%</b> • สภาพคล่อง <b>10%</b><br>
+          <span class="sg-sub">ถ้าราคาพุ่งแรงแล้ว (7วัน &gt; 35% หรือ 24ชม. &gt; 15% หรือ RSI &gt; 70) คะแนนถูกจำกัดไม่เกิน 45 ทันที — กันเหรียญที่ "ไปแล้ว"</span></p>
+          <p><b>📦 คะแนนสะสมพลัง 30 วัน (0–100)</b> — คัดเหรียญที่กำลังสะสมพลังบนฐาน:
+          โครงสร้างฐาน <b>30%</b> (ราคา 30 วันหุบตัวในกรอบ −22% ถึง +15%) • ตำแหน่งในกรอบ <b>30%</b> (โซนล่าง 15–48% = ใกล้แนวรับแต่ไม่ติด Low) •
+          เพิ่งเริ่มยก Low <b>25%</b> (24ชม./7วัน ขยับ +0.2% ถึง +4.5% = ยกพอดี ไม่ใช่พุ่ง) • คุณภาพโครงสร้าง <b>15%</b> (Higher Lows + ฐานแนวนอนความผันผวนต่ำ)</p>
+          <p><b>🧩 แต้มเชิงเทคนิค (ในหน้านี้)</b> — เจาะลึกจากแท่งราคา 4 ชม. 180 แท่ง (30 วัน) แยกไว้ด้านบน:
+          เทรนด์ SMA20/50 + MACD <b>25%</b> • โมเมนตัม RSI + ROC <b>25%</b> • ความเสี่ยงจากความผันผวน ATR <b>20%</b> •
+          วอลุ่มกำลังไหลเข้า <b>15%</b> • สภาพสุดโต่ง Overbought/Oversold <b>15%</b></p>
+          <p><b>🏷️ สัญญาณอินดิเคเตอร์ (ป้ายในตาราง)</b> — ป้ายที่เกิดจริงจากกราฟ 7 วัน เช่น 🗜️ BB Squeeze (กรอบบีบตัว จ่อเบรกเอาท์) •
+          🔥 MACD Golden Cross • 🎯 RSI ฟื้นจากโซนล่าง • 📦 สร้างฐานสะสมพลัง • ⚠️ ราคาพุ่งไปแล้ว (เสี่ยงไล่ราคา)</p>
+          <p class="sg-sub" style="margin-bottom:0">คะแนนและสัญญาณทั้งหมดคำนวณจากข้อมูลราคาในอดีตเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน</p>
+        </div>
+      </details>
+
       <div class="chart-box">
         <div class="chart-title">ราคา • SMA 20/50 • Bollinger Bands (30 วัน, 4 ชม.)</div>
         <canvas id="cv-price"></canvas>
@@ -2714,6 +2746,16 @@ function closeDrawer(){
 /* ---- โหลด OHLC 30 วันสำหรับ Drawer — มีทางสำรองให้กราฟเสถียรขึ้น ----
    1) CoinGecko (id จริง หรือ slug ของ CMC ซึ่งตรงกับ CG กรณีส่วนใหญ่)
    2) ถ้าโดน rate limit / CG ล่ม / โหมด Binance → ใช้ klines 4h × 180 แท่ง (= 30 วัน) จาก Binance */
+/* กัน "เหรียญผิดตัว": เหรียญต่างโครงการจำนวนมากใช้ ticker ซ้ำกัน — ถ้าราคาปิดแท่งล่าสุดจาก Binance
+   ห่างจากราคาปัจจุบันของเหรียญเกิน ~3 เท่า ถือว่าเป็นคนละเหรียญ ไม่นำมาวาดกราฟ (เช่น SOL เหรียญ Solana
+   กับ SOL ของโปรเจกต์อื่นบน Binance) */
+function klinesMatchCoin(coin, k){
+  const cur = coin ? coin.current_price : 0;
+  const last = (Array.isArray(k) && k.length) ? +k[k.length-1][4] : 0;
+  if (!cur || !last) return true;   // ไม่มีราคาเทียบ → ยอมรับไปก่อน
+  const r = last / cur;
+  return r >= 0.34 && r <= 3;
+}
 async function loadOHLCDetail(coin){
   let cgErr = null;
   let cgId = coin.id;
@@ -2734,6 +2776,10 @@ async function loadOHLCDetail(coin){
       if (hit && now - hit.ts < 10*60*1000){ coin._ohlcSrc = 'binance'; return hit.data; }
       const k = await bFetch('/api/v3/klines', { symbol: pair, interval: '4h', limit: 180 });
       if (Array.isArray(k) && k.length >= 50){
+        if (!klinesMatchCoin(coin, k)){
+          cgErr = new Error('Binance มีคู่เทรด ticker ตรงกันแต่ราคาไม่ตรงกับเหรียญนี้ (น่าจะเป็นคนละเหรียญที่ใช้ชื่อเดียวกัน) — ข้ามเพื่อกันแสดงกราฟผิดเหรียญ');
+          throw cgErr;
+        }
         const arr = k.map(x => [x[0], +x[1], +x[2], +x[3], +x[4]]);
         coin._ohlcSrc = 'binance';
         state.ohlcCache.set(coin.id, { ts: now, data: arr });
@@ -2800,7 +2846,7 @@ const RANGE_LABELS = { '7d': '📈 กราฟราคา 7 วัน', '30d':
 function chartDataForRange(){
   if (!detailChart) return null;
   if (detailRange === '7d') return detailChart.ohlc.slice(-42);      // 42 แท่ง 4h = 7 วัน
-  if (detailRange === 'all') return detailChart.all || detailChart.ohlc;
+  if (detailRange === 'all') return detailChart.all || null;   // ห้าม fallback เป็น 30 วัน — กันเข้าใจผิดว่าเป็นประวัติทั้งหมด
   return detailChart.ohlc;
 }
 function setDetailRange(r){
@@ -2808,11 +2854,37 @@ function setDetailRange(r){
   $$('.dr-range-btn').forEach(b => b.classList.toggle('active', b.dataset.range === r));
   const t = $('#dr-chart-title');
   if (t) t.textContent = RANGE_LABELS[r] || RANGE_LABELS['30d'];
+  const note = $('#dr-chart-note');
+  if (note) note.classList.add('hidden');
+  drawDetailChart();   // ถ้ายังไม่มีข้อมูลช่วงนี้ จะเคลียร์ผืนผ้าว่าง ๆ (ไม่แอบแสดงกราฟ 30 วันซ้อน)
+  updatePosChip();     // ชิป "ตำแหน่งในกรอบ" เปลี่ยนชื่อ+ค่าตามช่วงที่เลือก
   if (r === 'all' && detailChart && !detailChart.all && state.detail){
-    loadAllTimeChart(state.detail);   // ยังไม่มีข้อมูลตลอดกาล → โหลด (ระหว่างรอยังวาดกราฟ 30 วันอยู่)
-  } else {
-    drawDetailChart();
+    loadAllTimeChart(state.detail);   // ยังไม่มีข้อมูลตลอดกาล → โหลด
   }
+}
+/* ชิป "ตำแหน่งในกรอบ" ในหน้ารายละเอียด — คำนวณใหม่ตามช่วงกราฟที่กำลังแสดง (7ว/30ว/ตลอดกาล) */
+function updatePosChip(){
+  const el = $('#chip-pos');
+  const dd = state.detailData;
+  if (!el || !dd || !dd.d) return;
+  const d = dd.d;
+  let label = 'ตำแหน่ง 30 วัน', val = Math.round(d.nearHigh*100) + '%', sub = 'จาก Low → High ของ 30 วัน';
+  if (detailRange === '7d'){
+    const cl = d.close.slice(-42);   // 42 แท่ง 4 ชม. = 7 วัน
+    const lo = Math.min(...cl), hi = Math.max(...cl);
+    const pos = hi > lo ? (cl[cl.length-1] - lo) / (hi - lo) : 0.5;
+    label = 'ตำแหน่ง 7 วัน'; val = Math.round(pos*100) + '%'; sub = 'จาก Low → High ของ 7 วัน';
+  } else if (detailRange === 'all'){
+    label = 'ตำแหน่งตลอดกาล'; sub = 'จากต่ำสุด → สูงสุดตลอดกาล';
+    const data = detailChart && detailChart.all;
+    if (data && data.length > 1){
+      const lo = Math.min(...data.map(x => x[3])), hi = Math.max(...data.map(x => x[2]));
+      const cur = data[data.length-1][4];
+      const pos = hi > lo ? Math.min(1, Math.max(0, (cur - lo) / (hi - lo))) : 0.5;
+      val = Math.round(pos*100) + '%';
+    } else { val = '—'; sub = 'รอข้อมูลตลอดกาล'; }
+  }
+  el.innerHTML = '<div class="t">' + label + '</div><div class="v">' + val + '</div><div class="s">' + sub + '</div>';
 }
 async function fetchAllTimeData(coin){
   // โหลดข้อมูลราคาตลอดกาล 1 รอบ (ไม่แตะแคช) — คืน { data:[ts,o,h,l,c]|null, src:'CoinGecko'|'Binance'|'' }
@@ -2838,7 +2910,7 @@ async function fetchAllTimeData(coin){
   if (pair){
     try {
       const k = await bFetch('/api/v3/klines', { symbol: pair, interval: '1M', limit: 1000 });
-      if (Array.isArray(k) && k.length > 10){
+      if (Array.isArray(k) && k.length > 10 && klinesMatchCoin(coin, k)){
         return { data: k.map(x => [x[0], +x[4], +x[2], +x[3], +x[4]]), src: 'Binance' };
       }
     } catch(e){}
@@ -2856,15 +2928,23 @@ async function getAllTimeData(coin){
 async function loadAllTimeChart(coin){
   if (!detailChart || !coin) return;
   const src = $('#dr-chart-src');
+  const note = $('#dr-chart-note');
   const prevSrc = src ? src.textContent : '';
+  if (note) note.classList.add('hidden');
   if (src) src.textContent = '⏳ กำลังโหลดข้อมูลตลอดกาล...';
   const r = await getAllTimeData(coin);
   const arr = r.data;
   if (src) src.textContent = prevSrc;
   // ผู้ใช้อาจปิด/สลับเหรียญไปแล้ว หรือกดกลับ 30 วัน — วาดเฉพาะเมื่อยังสนใจข้อมูลนี้อยู่
   if (detailChart && state.detail === coin && detailRange === 'all'){
-    if (arr){ detailChart.all = arr; drawDetailChart(); }
-    else if (src){ src.textContent = 'โหลดข้อมูลตลอดกาลไม่สำเร็จ (แสดง 30 วัน)'; }
+    if (arr){
+      detailChart.all = arr;
+      drawDetailChart();
+      updatePosChip();
+    } else if (note){
+      note.innerHTML = '⚠️ ไม่มีข้อมูลตลอดกาลสำหรับเหรียญนี้ (เหรียญอาจเพิ่งเปิดตัว หรือโหลดจากแหล่งข้อมูลไม่สำเร็จชั่วคราว) — กด <b>7 วัน</b> หรือ <b>30 วัน</b> เพื่อดูกราฟย้อนหลัง';
+      note.classList.remove('hidden');
+    }
   }
 }
 function renderDetailChart(ohlc, srcLabel){
@@ -2878,7 +2958,14 @@ function renderDetailChart(ohlc, srcLabel){
 function drawDetailChart(){
   const cv = $('#dr-chart');
   if (!cv || !detailChart) return;
-  const ohlc = chartDataForRange() || detailChart.ohlc;
+  const ohlc = chartDataForRange();
+  if (!ohlc || ohlc.length < 2){
+    // ไม่มีข้อมูลช่วงที่เลือก (เช่น ตลอดกาลยังโหลดไม่สำเร็จ) — เคลียร์ผืนผ้าให้ว่าง
+    // กันกราฟ 30 วันค้างอยู่ใต้หัวข้อ "ตลอดกาล" จนดูเหมือนเป็นประวัติทั้งหมดทั้งที่ไม่ใช่
+    try { const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, cv.width, cv.height); } catch(e){}
+    const tip0 = $('#dr-chart-tip'); if (tip0) tip0.classList.add('hidden');
+    return;
+  }
   const wrap = $('#dr-chart-wrap');
   const dpr = window.devicePixelRatio || 1;
   const w = Math.max(320, (wrap && wrap.getBoundingClientRect().width) || parseFloat(cv.style.width) || 640);
@@ -2973,9 +3060,12 @@ function detailChartLeave(){
 
 function renderScore(coin, d, score){
   const rate = state.rate, sym = curSym();
-  const col = colorForScore(score.total);
-  const sig = signalFor(score.total);
-  const g = gradeFor(score.total);
+  // คะแนนรวม ⚡ ใช้สูตรเดียวกับคอลัมน์ "คะแนนรวม ⚡" ในตารางหลัก (จาก % เปลี่ยนแปลง 24ชม./7วัน/30วัน + สภาพคล่อง)
+  // เพื่อให้เกรดในตารางกับในหน้ารายละเอียดเท่ากันเสมอ — ส่วน score (พารามิเตอร์) คือ "แต้มเชิงเทคนิค" แสดงแยกด้านล่าง
+  const qs = (coin._quickScore != null) ? coin._quickScore : score.total;
+  const col = colorForScore(qs);
+  const sig = signalFor(qs);
+  const g = gradeFor(qs);
   const an = coin._analysis;
   const earlyScore = an ? an.earlyBuyScore : 50;
   const earlyCol = colorForScore(earlyScore);
@@ -3040,20 +3130,21 @@ function renderScore(coin, d, score){
 
   // Ring Area (Full Technical Score)
   $('#ring-area').innerHTML = `
-    <div class="ring" style="background:conic-gradient(${col} ${score.total*3.6}deg, #101c34 0deg)">
-      <div class="in"><div class="num" style="color:${col}">${score.total}</div>
+    <div class="ring" style="background:conic-gradient(${col} ${qs*3.6}deg, #101c34 0deg)">
+      <div class="in"><div class="num" style="color:${col}">${qs}</div>
       <div class="lbl">/ 100 คะแนนเต็ม</div></div>
     </div>
     <div class="ring-head">
       <div class="grd" style="color:${col}">เกรด ${g}</div>
       <div class="sig" style="color:${col}">${sig.t}</div>
       <div class="meta">${esc(coin.name)} (${esc(coin.symbol.toUpperCase())}) • ราคา ${fmtPrice(coin.current_price, rate)} ${sym}<br>
-        คำนวณจากแท่ง 4 ชม. ย้อนหลัง 30 วัน</div>
+        คะแนนรวม ⚡ เกณฑ์เดียวกับตารางหลัก — จาก % เปลี่ยนแปลง 24ชม./7วัน/30วัน + สภาพคล่อง<br>(ดูเกณฑ์ทั้งหมดที่ "📚 คะแนนแต่ละตัวคำนวณจากอะไร" ด้านล่าง)</div>
     </div>`;
 
-  $('#subscore').innerHTML = score.parts.map(p => `
+  $('#subscore').innerHTML = '<div class="ss-head">🧩 แต้มเชิงเทคนิค <b style="color:' + colorForScore(score.total) + '">' + score.total + '/100</b> — จากแท่งราคา 4 ชม. 180 แท่ง (30 วัน) • เป็นมุมเชิงเทคนิคเจาะลึก แยกจากคะแนนรวม ⚡ ที่ใช้เกณฑ์เดียวกับตาราง</div>'
+    + score.parts.map(p => `
     <div class="row">
-      <span class="nm">${esc(p.nm)}</span>
+      <span class="nm">${esc(p.nm)} <span style="color:var(--tx3);font-weight:600">(${Math.round(p.w*100)}%)</span></span>
       <span class="bar"><i style="width:${p.s}%;background:${colorForScore(p.s)}"></i></span>
       <span class="val" style="color:${colorForScore(p.s)}">${Math.round(p.s)}</span>
     </div>`).join('');
@@ -3072,8 +3163,9 @@ function renderScore(coin, d, score){
   chip('Bollinger Squeeze', d.isSqueeze ? '🗜️ บีบตัวแคบ' : 'ปกติ', d.isSqueeze ? '<span style="color:var(--acc2)">จ่อเบรกเอาท์</span>' : '');
   chip('ATR (14)', d.atrPct === null ? '—' : round(d.atrPct*100,1) + '%', 'ความผันผวน/แท่ง');
   chip('ROC (10)', d.roc10 === null ? '—' : pctTxt(d.roc10), '');
-  chip('ตำแหน่ง 30 วัน', Math.round(d.nearHigh*100) + '%', 'จาก Low → High');
+  chips.push(`<div class="ind-chip" id="chip-pos"><div class="t">ตำแหน่ง 30 วัน</div><div class="v">${Math.round(d.nearHigh*100)}%</div><div class="s">จาก Low → High ของ 30 วัน</div></div>`);
   $('#grid-ind').innerHTML = chips.join('');
+  updatePosChip();   // ปรับชื่อ/ค่าตามช่วงกราฟที่ผู้ใช้เลือกค้างไว้
 
   renderAccDrawerBox(coin, d);
 
