@@ -2991,12 +2991,32 @@ async function fetchAllTimeData(coin){
   }
   return { data: null, src: '' };
 }
+/* ปัก "จุด ATH จริง" ลงในข้อมูลตลอดกาล — ข้อมูลแท่ง/รายวันสาธารณะมี granularity หยาบ
+   อาจพลาดจุดทะยาน intraday ที่ทำ ATH (เช่น แตะ 2.14 กลางวัน แต่ราคาปิดของช่วงนั้น ~0.9)
+   กราฟบนเว็บ CoinGecko ใช้ข้อมูลจุดละเอียดของเขาเองจึงเห็นยอดครบ — เราใช้ค่า ATH+วันที่
+   ที่บันทึกไว้ (จาก /coins/markets ตัวเดียวกับคอลัมน์ "จาก ATH" ในตาราง) มาเสริมจุดนั้นให้เส้น
+   กราฟพุ่งถึง ATH จริงเหมือนกัน */
+function injectATHPoint(coin, data){
+  const ath = coin && coin.ath;
+  const athTs = (coin && coin.ath_date) ? new Date(coin.ath_date).getTime() : 0;
+  if (!data || !data.length || !ath || !athTs || isNaN(athTs)) return data;
+  let hi = -Infinity;
+  for (const x of data){ if (x[2] > hi) hi = x[2]; }
+  if (hi >= ath * 0.98) return data;   // ข้อมูลมีจุดใกล้ ATH อยู่แล้ว — ไม่ต้องเสริม
+  const pt = [athTs, ath, ath, ath, ath];
+  let i = data.length;
+  while (i > 0 && data[i-1][0] > athTs) i--;
+  return data.slice(0, i).concat([pt], data.slice(i));
+}
 async function getAllTimeData(coin){
   // อ่านจากแคชก่อน ถ้าไม่มีค่อยโหลด (ใช้ร่วมกันทั้งกราฟตลอดกาลและกล่องมุมมองระยะยาว)
   let arr = allChartCache.get(coin.id) || null;
   if (arr) return { data: arr, src: '' };
   const r = await fetchAllTimeData(coin);
-  if (r.data) allChartCache.set(coin.id, r.data);
+  if (r.data){
+    r.data = injectATHPoint(coin, r.data);
+    allChartCache.set(coin.id, r.data);
+  }
   return r;
 }
 async function loadAllTimeChart(coin){
@@ -3072,6 +3092,16 @@ function drawDetailChart(){
     ctx.fillStyle = '#6278a3'; ctx.textAlign = 'left';
     ctx.fillText(fmtPrice(p, state.rate), padL + iw + 6, y + 3);
   }
+  // แถบช่วง High–Low ของแต่ละแท่ง (เฉพาะช่วงตลอดกาล) — แท่งหยาบ จุดทะยานทำ ATH อยู่ที่ High
+  // ไม่ใช่ราคาปิด วาดแถบนี้ให้เห็นยอดทะยานจริง เหมือนกราฟบนเว็บ CoinGecko
+  if (detailRange === 'all' && ohlc.length > 2){
+    ctx.beginPath();
+    ohlc.forEach((b, i) => i ? ctx.lineTo(X(i), Y(b[2])) : ctx.moveTo(X(i), Y(b[2])));
+    for (let i = ohlc.length - 1; i >= 0; i--) ctx.lineTo(X(i), Y(ohlc[i][3]));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(34,211,238,0.10)';
+    ctx.fill();
+  }
   // พื้นที่ไล่เฉด + เส้นราคาปิด
   const closes = ohlc.map(b => b[4]);
   const grad = ctx.createLinearGradient(0, padT, 0, padT + ih);
@@ -3099,6 +3129,13 @@ function drawDetailChart(){
   ctx.textAlign = 'right'; ctx.fillText(fdate(ohlc[ohlc.length - 1][0]), padL + iw, h - 6);
   // เส้นประบอกตำแหน่ง ATH จริง (โหมดตลอดกาล) — ให้เห็นชัดว่าจุดสูงสุดตลอดกาลอยู่ตรงไหน เทียบกราฟ
   if (athLine != null){
+    // จุดสีทองที่ยอดสูงสุดของข้อมูล (เส้นราคา/แถบแตะจุด ATH ตรงนี้)
+    let mi = 0;
+    for (let i = 1; i < ohlc.length; i++){ if (ohlc[i][2] > ohlc[mi][2]) mi = i; }
+    if (ohlc[mi][2] >= athLine * 0.97){
+      ctx.fillStyle = '#f5b63f';
+      ctx.beginPath(); ctx.arc(X(mi), Y(ohlc[mi][2]), 3, 0, Math.PI * 2); ctx.fill();
+    }
     const yA = Y(athLine);
     ctx.save();
     ctx.setLineDash([5, 4]);
