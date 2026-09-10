@@ -320,6 +320,13 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
 .lt-dot{position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid var(--acc);box-shadow:0 0 0 3px rgba(79,124,255,.25);z-index:1}
 .lt-cap{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:var(--tx3);flex-wrap:wrap}
 .lt-sum{background:var(--card2);border-left:3px solid var(--acc2);border-radius:8px;padding:10px 12px;margin-top:12px;font-size:13px;line-height:1.7}
+.cdc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:10px}
+.cdc-card{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.cdc-tf{font-size:11px;color:var(--tx3);font-weight:800;letter-spacing:.4px;text-transform:uppercase}
+.cdc-zone{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;margin-top:4px;line-height:1.4}
+.cdc-dot{width:12px;height:12px;border-radius:50%;flex:none;box-shadow:0 0 8px rgba(255,255,255,.18)}
+.cdc-meta{font-size:12px;color:var(--tx3);line-height:1.75;margin-top:6px}
+.cdc-sum{background:var(--card2);border-left:3px solid var(--ok);border-radius:8px;padding:10px 12px;margin-top:12px;font-size:13px;line-height:1.7}
 .ss-head{font-size:12px;color:var(--tx2);font-weight:700;margin-bottom:2px;line-height:1.6}
 .score-guide{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:4px 0 14px}
 .score-guide summary{cursor:pointer;font-size:13px;font-weight:800;color:var(--tx2);user-select:none}
@@ -690,6 +697,10 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
       <div class="analysis-box">
         <h3>🤖 บทวิเคราะห์อัตโนมัติ (Rule-based &amp; Trade Setup)</h3>
         <div class="ai-output" id="rule-out"></div>
+      </div>
+      <div class="analysis-box">
+        <h3>🎯 CDC ActionZone V3 2020 <span style="font-size:11px;color:var(--tx3);font-weight:600">เฟรมรายวัน (D) &amp; รายสัปดาห์ (W)</span></h3>
+        <div class="ai-output" id="cdc-out"></div>
       </div>
       <div class="analysis-box">
         <h3>🔭 มุมมองระยะยาว (Long-Term View)</h3>
@@ -3303,6 +3314,7 @@ function renderScore(coin, d, score){
 
   $('#rule-out').innerHTML = renderMD(ruleAnalysis(coin, d, score));
   renderLongTermPanel(coin);
+  renderCDCPanel(coin);
 }
 
 /* ---- กล่องวิเคราะห์: Checklist โครงสร้างฐาน 30 วัน + แผนเทรด (Entry/SL/TP) ---- */
@@ -3408,6 +3420,139 @@ function renderAccDrawerBox(coin, d){
   $('#dr-acc-note').innerHTML = `แผนเทรดอิงโครงสร้างฐาน 30 วัน: <b>SL</b> อยู่ใต้แนวรับฐาน (ต่ำกว่า Low 7 วัน − 0.8 ATR) • <b>TP2</b> ชี้เป้าที่ High 30 วัน •
     ตัวอย่างแนวทาง: ความเสี่ยงต่อไม้ ≤ 1–2% ของพอร์ต แบ่งไม้เข้า 2 ส่วนในโซน Entry และตัดไม้ทั้งหมดหากปิดแท่ง 4 ชม. ต่ำกว่า SL —
     <b>ไม่ใช่คำแนะนำการลงทุน</b>`;
+}
+
+/* ---- 🎯 CDC ActionZone V3 2020 (โดย piriya33) — ระบบ 2 EMA (12/26) บนเฟรม D และ W ----
+   ตรรกะตามสคริปต์เปิดของผู้สร้าง: ดูความสัมพันธ์ของ EMA เร็ว/ช้า + ตำแหน่งราคาเทียบสองเส้น → 6 โซนสี
+   ฝั่งขาขึ้น (EMA12 > EMA26): เขียว (ราคาเหนือ EMA12) • เหลือง (ระหว่างสองเส้น = Prebuy) • ส้ม (ใต้ทั้งสองเส้น)
+   ฝั่งขาลง (EMA12 < EMA26): แดง (ราคาใต้ EMA12) • ฟ้าอ่อน (ระหว่างสองเส้น) • น้ำเงิน (เหนือทั้งสองเส้น)
+   กฎพื้นฐานตามคู่มือ: ปิดแท่งเขียว = จังหวะหลักของระบบ • ปิดแท่งแดง = ฝั่งออกไม้ • เหมาะกับไทม์เฟรมใหญ่ */
+const CDC_FAST = 12, CDC_SLOW = 26;
+const cdcCache = new Map();   // coinId → [{t, c}] ราคาปิดรายวัน ~2 ปี (โหลดครั้งเดียวต่อเหรียญต่อการเปิดหน้า)
+const CDC_COLORS = { green:'#2dd4a7', yellow:'#f5b63f', orange:'#f79a4e', red:'#f4576e', aqua:'#67e8f9', blue:'#4f7cff' };
+const CDC_ZONES = {
+  green:  { name:'โซนเขียว — ขาขึ้นเต็มตัว', hint:'ราคาปิดเหนือ EMA12 และ EMA12 > EMA26 — ตามคู่มือต้นฉบับ "ปิดแท่งเขียว" คือจังหวะหลักของระบบ' },
+  yellow: { name:'โซนเหลือง — ย่อตัวในขาขึ้น (Prebuy)', hint:'เทรนด์ยังขึ้น แต่ราคาย่อลงมาระหว่างสองเส้น — ผู้ใช้ระบบมักรอยืนยัน (เช่น กลับเป็นโซนเขียว) ก่อน' },
+  orange: { name:'โซนส้ม — ย่อลึกใต้สองเส้นในขาขึ้น', hint:'EMA12 ยังเหนือ EMA26 แต่ราคาหลุดใต้ทั้งสองเส้น — คู่มือต้นฉบับจัดไว้ฝั่งขาขึ้น รอกลับเป็นโซนเขียวก่อน' },
+  red:    { name:'โซนแดง — ขาลงเต็มตัว', hint:'ราคาปิดต่ำกว่า EMA12 และ EMA12 < EMA26 — ตามคู่มือต้นฉบับ "ปิดแท่งแดง" คือฝั่งออกไม้ของระบบ' },
+  aqua:   { name:'โซนฟ้าอ่อน — เด้งในขาลง', hint:'เทรนด์ยังลง ราคาเด้งขึ้นมาระหว่างสองเส้น — ยังเป็นฝั่งขาลงของระบบ' },
+  blue:   { name:'โซนน้ำเงิน — เด้งเหนือสองเส้นในขาลง', hint:'ราคาเด้งแรงเหนือ EMA ทั้งสอง แต่ EMA12 ยังต่ำกว่า EMA26 — ฝั่งขาลงของระบบ' }
+};
+function emaSeriesVals(arr, n){
+  const out = new Array(arr.length).fill(null);
+  if (arr.length < n) return out;
+  let s = 0;
+  for (let i = 0; i < n; i++) s += arr[i];
+  let prev = s / n;
+  out[n-1] = prev;
+  const k = 2 / (n + 1);
+  for (let i = n; i < arr.length; i++){ prev = arr[i]*k + prev*(1-k); out[i] = prev; }
+  return out;
+}
+function cdcCalc(closes){
+  const fast = emaSeriesVals(closes, CDC_FAST), slow = emaSeriesVals(closes, CDC_SLOW);
+  const zones = closes.map((c, i) => {
+    if (fast[i] == null || slow[i] == null) return null;
+    if (fast[i] > slow[i]) return c > fast[i] ? 'green' : (c >= slow[i] ? 'yellow' : 'orange');
+    return c < fast[i] ? 'red' : (c <= slow[i] ? 'aqua' : 'blue');
+  });
+  let iLast = closes.length - 1;
+  while (iLast > 0 && zones[iLast] == null) iLast--;
+  let barsInZone = 0;
+  for (let i = iLast; i >= 0 && zones[i] === zones[iLast]; i--) barsInZone++;
+  return { fast, slow, zones, zone: zones[iLast], iLast, barsInZone };
+}
+async function fetchCDCDaily(coin){
+  let cgId = coin.id;
+  if (cgId && cgId.startsWith('cmc-')) cgId = cgId.slice(4);
+  if (cgId && !cgId.startsWith('bin-')){
+    try {
+      const js = await cgFetch('/coins/' + encodeURIComponent(cgId) + '/market_chart', { vs_currency:'usd', days:'730' }, 2);
+      const prices = (js && Array.isArray(js.prices)) ? js.prices : [];
+      if (prices.length > 60) return prices.map(p => ({ t: p[0], c: p[1] }));
+    } catch(e){}
+  }
+  const sym = String(coin.symbol || '').toUpperCase();
+  const pair = coin._pair || (sym ? sym + 'USDT' : null);
+  if (pair){
+    try {
+      const k = await bFetch('/api/v3/klines', { symbol: pair, interval: '1d', limit: 730 });
+      if (Array.isArray(k) && k.length > 60 && klinesMatchCoin(coin, k)) return k.map(x => ({ t: x[0], c: +x[4] }));
+    } catch(e){}
+  }
+  return null;
+}
+async function getCDCDaily(coin){
+  let d = cdcCache.get(coin.id) || null;
+  if (d) return d;
+  d = await fetchCDCDaily(coin);
+  if (d) cdcCache.set(coin.id, d);
+  return d;
+}
+function toWeeklyCloses(days){
+  const wk = [];
+  let curKey = null, last = null;
+  for (const d of days){
+    const key = Math.floor(d.t / 604800000);   // แบ่งกลุ่มตามสัปดาห์ (7 วัน/กลุ่ม)
+    if (key !== curKey){ if (last != null) wk.push(last); curKey = key; }
+    last = d.c;
+  }
+  if (last != null) wk.push(last);
+  return wk;
+}
+async function renderCDCPanel(coin){
+  const out = $('#cdc-out');
+  if (!out || !coin) return;
+  out.innerHTML = '<p class="hint" style="margin:0">⏳ กำลังคำนวณ CDC ActionZone จากราคาปิดรายวัน ~2 ปี...</p>';
+  const days = await getCDCDaily(coin);
+  if (state.detail !== coin) return;   // ผู้ใช้สลับเหรียญ/ปิดหน้าต่างไปแล้ว
+  if (!days || days.length < 60){
+    out.innerHTML = '<p class="hint" style="margin:0">ยังไม่มีข้อมูลราคารายวันเพียงพอสำหรับคำนวณ CDC ActionZone (เหรียญอาจเพิ่งเปิดตัว หรือโหลดไม่สำเร็จชั่วคราว — ลองปิด-เปิดหน้าต่างนี้อีกครั้ง)</p>';
+    return;
+  }
+  const rate = state.rate;
+  const dRes = cdcCalc(days.map(x => x.c));
+  const wCloses = toWeeklyCloses(days);
+  const wRes = wCloses.length >= 40 ? cdcCalc(wCloses) : null;   // ต้องการ ~9 เดือนขึ้นไปจึงคำนวณเฟรม W ได้
+  const card = (tf, res, unit, needMore) => {
+    if (needMore) return `<div class="cdc-card"><div class="cdc-tf">${tf}</div><div class="cdc-zone" style="color:var(--tx3)">ข้อมูลยังไม่พอ</div><div class="cdc-meta">มีข้อมูล ${wCloses.length} สัปดาห์ — ต้องการอย่างน้อย ~40 สัปดาห์ (9 เดือน) จึงคำนวณ EMA26 รายสัปดาห์ได้อย่างมีนัยสำคัญ</div></div>`;
+    const z = CDC_ZONES[res.zone] || CDC_ZONES.green;
+    const i = res.iLast;
+    const trendUp = res.fast[i] > res.slow[i];
+    return `<div class="cdc-card" title="${esc(z.hint)}">
+      <div class="cdc-tf">${tf}</div>
+      <div class="cdc-zone" style="color:${CDC_COLORS[res.zone]}"><span class="cdc-dot" style="background:${CDC_COLORS[res.zone]}"></span>${esc(z.name)}</div>
+      <div class="cdc-meta">ราคาปิดล่าสุด <b style="color:var(--tx)">${fmtPrice(res.zone === undefined ? 0 : (tf.includes('รายวัน') ? days[days.length-1].c : wCloses[wCloses.length-1]), rate)}</b><br>
+      EMA${CDC_FAST} ${fmtPrice(res.fast[i], rate)} • EMA${CDC_SLOW} ${fmtPrice(res.slow[i], rate)}<br>
+      เทรนด์: EMA${CDC_FAST} ${trendUp ? '&gt;' : '&lt;'} EMA${CDC_SLOW} (${trendUp ? 'ขาขึ้น' : 'ขาลง'}) • อยู่ในโซนนี้ ${res.barsInZone} ${unit}</div>
+    </div>`;
+  };
+  let html = '<p class="hint" style="margin:0 0 2px">คำนวณจากราคาปิดรายวัน ' + days.length.toLocaleString('th-TH') + ' วัน (EMA ' + CDC_FAST + '/' + CDC_SLOW + ' ตามต้นฉบับ) — ชี้ที่การ์ดเพื่อดูความหมายของโซน</p>';
+  html += '<div class="cdc-grid">';
+  html += card('เฟรมรายวัน (D)', dRes, 'วัน', false);
+  html += card('เฟรมรายสัปดาห์ (W)', wRes, 'สัปดาห์', !wRes);
+  html += '</div>';
+  // สรุปประกอบการตัดสินใจ (ภาษากลาง อ้างกฎของระบบ CDC ไม่ใช่คำแนะนำการลงทุน)
+  const bull = z => z === 'green' || z === 'yellow' || z === 'orange';
+  let sum;
+  if (wRes && dRes.zone === 'green' && wRes.zone === 'green'){
+    sum = 'ทั้งเฟรม D และ W ปิดอยู่ใน<b>โซนเขียว</b> — สองไทม์เฟรมฝั่งขาขึ้นตรงกัน ตามกฎพื้นฐานของระบบ CDC ("ปิดแท่งเขียว" คือจังหวะหลัก)';
+  } else if (wRes && wRes.zone === 'green' && dRes.zone === 'yellow'){
+    sum = 'W ยังเป็น<b>โซนเขียว</b> ส่วน D ย่อตัวอยู่<b>โซนเหลือง (Prebuy)</b> — ช่วงรอยืนยันของเฟรมรายวัน ยังไม่ใช่แท่งปิดเขียวของ D';
+  } else if (wRes && wRes.zone === 'green' && dRes.zone === 'orange'){
+    sum = 'W เป็น<b>โซนเขียว</b> ส่วน D ย่อลึกถึง<b>โซนส้ม</b> (ใต้ EMA ทั้งสอง) — คู่มือต้นฉบับจัดฝั่งขาขึ้น รอ D กลับเป็นโซนเขียวก่อนจะเป็นจังหวะหลักของระบบ';
+  } else if (dRes.zone === 'red' || (wRes && wRes.zone === 'red')){
+    sum = 'มีเฟรมที่ปิดอยู่ใน<b>โซนแดง</b>' + (dRes.zone === 'red' && wRes && wRes.zone === 'red' ? ' ทั้ง D และ W' : (dRes.zone === 'red' ? ' (เฟรม D)' : ' (เฟรม W)')) + ' — ตามกฎพื้นฐานของระบบ CDC คือฝั่งออกไม้/ไม่ใช่จังหวะเข้าไม้หลัก';
+  } else if (wRes && bull(wRes) && !bull(dRes)){
+    sum = 'W ฝั่งขาขึ้น แต่ D อยู่ฝั่งขาลง — สองเฟรมยังไม่สอดคล้องกัน ตามแนวทางระบบ CDC มักรอให้ทั้งสองเฟรมชัดเจนไปทางเดียวกันก่อน';
+  } else if (!wRes){
+    sum = 'แสดงเฉพาะเฟรมรายวัน (D) — ข้อมูลรายสัปดาห์ยังไม่พอสำหรับเฟรม W';
+  } else {
+    sum = 'เฟรม D และ W ยังไม่เข้าเกณฑ์จังหวะหลักของระบบ (โซนเขียวทั้งคู่) — ตามแนวทาง CDC คือช่วงรอสถานะให้ชัดเจน';
+  }
+  html += '<div class="cdc-sum"><b>ประกอบการตัดสินใจ:</b> ' + sum + '</div>';
+  html += '<p class="hint" style="margin:10px 0 0">อ้างอิงตรรกะ CDC ActionZone V3 2020 โดย piriya33 (TradingView, สคริปต์เปิด) — ระบบ 2 EMA (' + CDC_FAST + '/' + CDC_SLOW + ') อ่านจากแท่งปิด • คู่มือต้นฉบับแนะนำให้ใช้กับไทม์เฟรมใหญ่ • เพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน</p>';
+  out.innerHTML = html;
 }
 
 /* ---- 🔭 มุมมองระยะยาว — คำนวณในเครื่องจากข้อมูลราคาจริงตั้งแต่เปิดตัว (ไม่พึ่งบริการภายนอกเพิ่ม) ---- */
