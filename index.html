@@ -2939,7 +2939,10 @@ function updatePosChip(){
     label = 'ตำแหน่งตลอดกาล'; sub = 'จากต่ำสุด → สูงสุดตลอดกาล';
     const data = detailChart && detailChart.all;
     if (data && data.length > 1){
-      const lo = Math.min(...data.map(x => x[3])), hi = Math.max(...data.map(x => x[2]));
+      const lo = Math.min(...data.map(x => x[3]));
+      let hi = Math.max(...data.map(x => x[2]));
+      const ath = state.detail && state.detail.ath;
+      if (ath != null && ath > hi) hi = ath;   // รวม ATH ที่บันทึกไว้ (ข้อมูลแท่งอาจพลาดจุดทะยาน intraday)
       const cur = data[data.length-1][4];
       const pos = hi > lo ? Math.min(1, Math.max(0, (cur - lo) / (hi - lo))) : 0.5;
       val = Math.round(pos*100) + '%';
@@ -2949,15 +2952,25 @@ function updatePosChip(){
 }
 async function fetchAllTimeData(coin){
   // โหลดข้อมูลราคาตลอดกาล 1 รอบ (ไม่แตะแคช) — คืน { data:[ts,o,h,l,c]|null, src:'CoinGecko'|'Binance'|'' }
-  // 1) CoinGecko market_chart days=max (ราคาทั้งประวัติ)
   let cgId = coin.id;
   if (cgId && cgId.startsWith('cmc-')) cgId = cgId.slice(4);
   if (cgId && !cgId.startsWith('bin-')){
+    // 1) CoinGecko OHLC ทั้งประวัติ (แท่งรวม ~4 วัน) — เก็บ High/Low จริงของแต่ละช่วง
+    //    จับจุดทะยาน intraday ที่ทำ ATH ได้ (ต่างจากราคาปิดรายวันที่พลาดจุดพีคกลางวัน)
+    try {
+      const k = await cgFetch('/coins/' + encodeURIComponent(cgId) + '/ohlc', { vs_currency:'usd', days:'max' }, 2);
+      if (Array.isArray(k) && k.length > 30){
+        const step = Math.max(1, Math.ceil(k.length / 1600));   // ลดจำนวนแท่งเหลือ ≤1600 ให้วาดเร็ว
+        const data = k.filter((_, i) => i % step === 0 || i === k.length - 1)
+                      .map(x => [x[0], +x[1], +x[2], +x[3], +x[4]]);
+        return { data, src: 'CoinGecko' };
+      }
+    } catch(e){}
+    // 2) สำรอง: market_chart days=max (จุดราคารายวัน — อาจต่ำกว่า ATH จริงถ้าพีคเกิดกลางวัน)
     try {
       const js = await cgFetch('/coins/' + encodeURIComponent(cgId) + '/market_chart', { vs_currency:'usd', days:'max' }, 2);
       const prices = (js && Array.isArray(js.prices)) ? js.prices : [];
       if (prices.length > 30){
-        // ลดจำนวนจุดเหลือ ≤1600 ให้วาดเร็ว (คงจุดแรก-สุดท้าย และสุ่มแบบรักษาสัดส่วน)
         const step = Math.max(1, Math.ceil(prices.length / 1600));
         const data = prices.filter((_, i) => i % step === 0 || i === prices.length - 1)
                            .map(p => [p[0], p[1], p[1], p[1], p[1]]);
@@ -3040,6 +3053,11 @@ function drawDetailChart(){
   const iw = w - padL - padR, ih = h - padT - padB;
   let lo = Infinity, hi = -Infinity;
   for (const b of ohlc){ if (b[3] < lo) lo = b[3]; if (b[2] > hi) hi = b[2]; }
+  // โหมดตลอดกาล: นำ ATH ที่บันทึกไว้ (จาก /coins/markets) มาคิดในสเกลด้วย —
+  // ข้อมูลแท่งอาจพลาดจุดทะยาน intraday ที่แตะ ATH จริง ทำให้กราฟดูสูงสุดต่ำกว่าความจริง
+  const drCoin = state.detail;
+  const athLine = (detailRange === 'all' && drCoin && drCoin.ath != null) ? drCoin.ath : null;
+  if (athLine != null && athLine > hi) hi = athLine;
   if (!(hi > lo)) hi = lo + 1;
   const pad = (hi - lo) * 0.06; lo -= pad; hi += pad;
   const X = i => padL + (i / (ohlc.length - 1)) * iw;
@@ -3079,6 +3097,21 @@ function drawDetailChart(){
   ctx.fillStyle = '#6278a3';
   ctx.textAlign = 'left'; ctx.fillText(fdate(ohlc[0][0]), padL, h - 6);
   ctx.textAlign = 'right'; ctx.fillText(fdate(ohlc[ohlc.length - 1][0]), padL + iw, h - 6);
+  // เส้นประบอกตำแหน่ง ATH จริง (โหมดตลอดกาล) — ให้เห็นชัดว่าจุดสูงสุดตลอดกาลอยู่ตรงไหน เทียบกราฟ
+  if (athLine != null){
+    const yA = Y(athLine);
+    ctx.save();
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = 'rgba(245,182,63,0.8)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(padL, yA); ctx.lineTo(padL + iw, yA); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#f5b63f'; ctx.textAlign = 'left'; ctx.font = 'bold 10px system-ui, sans-serif';
+    const athLbl = 'ATH ' + fmtPrice(athLine, state.rate) + (drCoin.ath_date ? ' • ' + athDateTxt(drCoin.ath_date) : '');
+    ctx.fillText(athLbl, padL + 4, yA < padT + 14 ? yA + 13 : yA - 5);
+    ctx.restore();
+    ctx.font = '10px system-ui, sans-serif';
+  }
   // เส้น crosshair ตอน hover
   if (detailChart.hover >= 0 && detailChart.hover < ohlc.length){
     const i = detailChart.hover, b = ohlc[i];
@@ -3383,6 +3416,12 @@ async function renderLongTermPanel(coin){
   for (const x of arr){
     if (x[2] > hi){ hi = x[2]; hiTs = x[0]; }
     if (x[3] < lo){ lo = x[3]; loTs = x[0]; }
+  }
+  // ATH ที่บันทึกไว้ใน /coins/markets ครอบคลุมจุดทะยาน intraday ที่ข้อมูลแท่งอาจพลาด —
+  // ใช้ค่าที่สูงกว่าเสมอ เพื่อให้ "% จากจุดสูงสุดตลอดกาล" ตรงกับคอลัมน์ "จาก ATH" ในตาราง
+  if (coin.ath != null && coin.ath > hi){
+    hi = coin.ath;
+    hiTs = coin.ath_date ? new Date(coin.ath_date).getTime() : 0;
   }
   const fromHi = hi > 0 ? (cur/hi - 1) * 100 : null;    // ติดลบ = ต่ำกว่าจุดสูงสุด
   const fromLo = lo > 0 ? (cur/lo - 1) * 100 : null;    // บวก = สูงกว่าจุดต่ำสุด
