@@ -277,6 +277,38 @@ tbody tr.highlight-early:hover{background:rgba(45,212,167,0.1)}
 .ath-mid{color:var(--acc2);font-weight:600}
 .ath-near{color:var(--tx2)}
 .loading-row td{text-align:center;color:var(--tx3);padding:40px}
+
+/* ---------- มุมมองการ์ดมือถือ (จอเล็กแสดงการ์ดแทนตาราง 12 คอลัมน์) ---------- */
+#coin-cards{display:none;flex-direction:column;gap:10px}
+#card-sort-bar{display:none;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;color:var(--tx2)}
+#card-sort{max-width:230px}
+.coin-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;
+  transition:border-color .15s ease,transform .08s ease}
+.coin-card:hover{border-color:var(--acc2)}
+.coin-card:active{transform:scale(.985)}
+.coin-card.hl-early{border-color:rgba(45,212,167,.45)}
+.coin-card.hl-acc{border-color:rgba(245,182,63,.5)}
+.cc-top{display:flex;align-items:center;gap:10px}
+.cc-top img{width:30px;height:30px;border-radius:50%;flex-shrink:0}
+.cc-id{flex:1;min-width:0}
+.cc-id .nm{display:block;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cc-id .sy{font-size:11.5px;color:var(--tx3)}
+.cc-score{text-align:right;line-height:1.3;flex-shrink:0}
+.cc-score .sc{font-size:20px;font-weight:800}
+.cc-score .gr{font-size:11px;color:var(--tx3)}
+.cc-score .sm-sub{display:block;font-size:11px;color:var(--tx3)}
+.cc-mid{display:flex;align-items:center;gap:10px;margin-top:9px}
+.cc-price{flex:1;min-width:0}
+.cc-price .p{font-size:16.5px;font-weight:700}
+.cc-price .chgs{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;margin-top:3px}
+.cc-spark{flex-shrink:0}
+.cc-spark .spark-wrap{display:block}
+.cc-bot{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:9px}
+@media (max-width:768px){
+  #tbl-wrap{display:none}          /* ซ่อนตาราง — ใช้การ์ดแทน */
+  #coin-cards{display:flex}
+  #card-sort-bar{display:flex}
+}
 footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
 /* ---------- แถวปุ่มแชร์/ติดตาม (footer) ---------- */
 .share-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:26px 0 18px}
@@ -569,6 +601,13 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
       <tbody id="tbody"></tbody>
     </table>
   </div>
+
+  <!-- มุมมองการ์ดมือถือ — จอเล็กแสดงแทนตาราง (สลับอัตโนมัติ) • การเรียงใช้แถบนี้แทนหัวตาราง -->
+  <div id="card-sort-bar" class="toolbar" style="padding:8px 12px">
+    <span style="white-space:nowrap">↕️ เรียงตาม</span>
+    <select id="card-sort"></select>
+  </div>
+  <div id="coin-cards"></div>
 
   <footer>
     <div class="share-row">
@@ -2372,6 +2411,111 @@ function updateCounts(){
   $('#cnt-acc30').textContent = loadedN < nonStableN ? cAcc + '…' : String(cAcc);
 }
 
+/* ---- มุมมองการ์ดมือถือ: จอ ≤768px แสดงการ์ดเหรียญแทนตาราง 12 คอลัมน์ (ตารางต้องเลื่อนขวายาวบนจอเล็ก) ---- */
+const MQ_MOBILE = '(max-width:768px)';
+function isMobileLayout(){
+  try { return window.matchMedia(MQ_MOBILE).matches; } catch(e){ return false; }
+}
+/* ตัวเลือกการเรียงสำหรับจอเล็ก (แทนการคลิกหัวตาราง) — key ตรงกับ state.sort.k ของตารางเป๊ะ */
+const CARD_SORTS = {
+  earlyScore: { label:'🎯 คะแนนน่าจับตา (สูง→ต่ำ)', dir:-1 },
+  score:      { label:'⚡ คะแนนรวม (สูง→ต่ำ)', dir:-1 },
+  accScore:   { label:'📦 คะแนนสะสมพลัง 30 วัน (สูง→ต่ำ)', dir:-1 },
+  rank:       { label:'อันดับขนาดตลาด (เล็ก→ใหญ่)', dir:1 },
+  price:      { label:'ราคา (แพง→ถูก)', dir:-1 },
+  c24:        { label:'% เปลี่ยนแปลง 24 ชม. (สูง→ต่ำ)', dir:-1 },
+  c7:         { label:'% เปลี่ยนแปลง 7 วัน (สูง→ต่ำ)', dir:-1 },
+  c30:        { label:'% เปลี่ยนแปลง 30 วัน (สูง→ต่ำ)', dir:-1 },
+  ath:        { label:'ระยะจาก ATH (ใกล้→ไกล)', dir:1 },
+  rsi:        { label:'RSI (สูง→ต่ำ)', dir:-1 },
+  spark:      { label:'เทรนด์ช่วงกราฟที่เลือก (ขึ้น→ลง)', dir:-1 },
+  pos30:      { label:'ตำแหน่งในกรอบ (สูง→ต่ำ)', dir:-1 },
+  name:       { label:'ชื่อเหรียญ (ก→ฮ)', dir:1 }
+};
+function syncCardSort(){
+  const sel = $('#card-sort');
+  if (!sel) return;
+  if (!sel.options.length){
+    sel.innerHTML = Object.entries(CARD_SORTS).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join('');
+    sel.onchange = () => { state.sort = { k: sel.value, dir: CARD_SORTS[sel.value].dir }; renderTable(); };
+  }
+  if (CARD_SORTS[state.sort.k]) sel.value = state.sort.k;   // สะท้อน sort ปัจจุบัน (จากหัวตาราง/จาก select เอง)
+}
+/* ---- สัญญาณอินดิเคเตอร์ (badge) — ใช้ร่วมระหว่างตารางและการ์ดมือถือ (เกณฑ์เดียวกัน) ---- */
+function sigBadgesHTML(c, an){
+  if (an && an.tags && an.tags.length){
+    return an.tags.slice(0, 2).map(t =>
+      `<span class="badge ${t.cls || 'early-tag'}" title="${esc(TAG_HELP[t.id] || t.text)}">${t.icon} ${esc(t.text.split(' ')[0])}</span>`
+    ).join('');
+  }
+  if (!an && state.sparkRange === '30d'){
+    return '<span class="spark-loading" title="กำลังทยอยโหลดข้อมูล 30 วันของเหรียญนี้ — เมื่อพร้อมจะแสดงสัญญาณที่คำนวณจากกราฟ 30 วัน">⏳ …</span>';
+  }
+  return '<span class="spark-none" title="ยังไม่มีสัญญาณเด่น — อินดิเคเตอร์ (RSI / MACD / Bollinger Bands) ยังไม่ชี้อะไรชัดเจนในจังหวะนี้ กดเข้าไปดูรายละเอียดเหรียญได้">—</span>';
+}
+/* ---- ป้าย RSI — ใช้ร่วมระหว่างตารางและการ์ดมือถือ ---- */
+function rsiPillHTML(c, an){
+  const rsiPer = state.sparkRange === '30d' ? '30 วัน' : '7 วัน';
+  const rsiVal = an ? an.rsi : (state.sparkRange === '30d' ? '⏳' : '—');
+  let rsiCls = 'rsi-neutral';
+  let rsiTip = 'RSI (Relative Strength Index) วัดความเร็ว/ความแรงของการเปลี่ยนแปลงราคา ช่วง 0-100 (คำนวณจากกราฟ ' + rsiPer + ')';
+  if (!an && state.sparkRange === '30d'){
+    rsiTip = 'กำลังทยอยโหลดข้อมูล 30 วันของเหรียญนี้ (โหลดทีละเหรียญเพื่อกัน rate limit) — เมื่อพร้อม RSI จะคำนวณจากกราฟ 30 วันให้อัตโนมัติ';
+  }
+  if (an){
+    if (an.rsi >= 30 && an.rsi <= 50) rsiCls = 'rsi-sweet';
+    else if (an.rsi < 30) rsiCls = 'rsi-oversold';
+    else if (an.rsi > 68) rsiCls = 'rsi-overbought';
+    const zone = an.rsi < 30 ? 'RSI ต่ำกว่า 30 (Oversold) — ราคาร่วงแรงจนสุดขั้ว มักพบการดีดตัวขึ้นบ้าง แต่ก็อาจไหลต่อได้'
+      : an.rsi <= 50 ? 'RSI 30-50 (โซนสะสม) — แรงขายเบาบาง ราคาพักฐาน เป็นช่วงที่นักวิเคราะห์มักจับตาหาจังหวะ'
+      : an.rsi <= 68 ? 'RSI 50-68 (ฝั่งบวก) — ผู้ซื้อกำลังมีเปรียบ โมเมนตัมเป็นขาขึ้น แต่ยังไม่ร้อนแรง'
+      : 'RSI สูงกว่า 68 (Overbought) — ราคาวิ่งแรงจนร้อน เสี่ยงถูกขายทำกำไร ระวังการไล่ราคา';
+    rsiTip = 'RSI (Relative Strength Index) วัดความเร็ว/ความแรงของการเปลี่ยนแปลงราคา ช่วง 0-100 (คำนวณจากกราฟ ' + rsiPer + ')\nค่าของเหรียญนี้: ' + an.rsi + '\n' + zone;
+  }
+  return `<span class="rsi-pill ${rsiCls}" title="${esc(rsiTip)}">${rsiVal}</span>`;
+}
+/* ---- การ์ดเหรียญ 1 ใบ — ข้อมูลสำคัญครบ แตะเปิดรายละเอียดเหมือนคลิกแถวตาราง ---- */
+function coinCardHTML(c){
+  const an = anFor(c);
+  const eScore = c._earlyScore || 0, qScore = c._quickScore || 0;
+  const accSub = c._acc ? c._acc.total : '⏳';
+  const qCol = colorForScore(qScore);
+  const ch24 = c.price_change_percentage_24h ?? 0;
+  const ch7  = c.price_change_percentage_7d_in_currency ?? 0;
+  const ch30 = c.price_change_percentage_30d_in_currency ?? 0;
+  const rate = state.rate, sym = curSym();
+  const cls = (state.mode === 'acc30' && c._acc && c._acc.qualified) ? 'hl-acc' : (eScore >= 75 ? 'hl-early' : '');
+  return `<div class="coin-card ${cls}" data-id="${esc(c.id)}">
+    <div class="cc-top">
+      <img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      <div class="cc-id">
+        <span class="nm">${esc(c.name)}</span>
+        <span class="sy">${esc(c.symbol.toUpperCase())}${c.market_cap_rank ? ' • อันดับ #' + c.market_cap_rank : ''}</span>
+      </div>
+      <div class="cc-score">
+        <span class="sc" style="color:${qCol}">${qScore} <span class="gr">${gradeFor(qScore)}</span></span>
+        <span class="sm-sub">🎯 ${eScore} • 📦 ${accSub}</span>
+      </div>
+    </div>
+    <div class="cc-mid">
+      <div class="cc-price">
+        <span class="p">${fmtPrice(c.current_price, rate)} ${sym} <span class="${pctCls(ch24)}">${pctTxt(ch24)}</span></span>
+        <div class="chgs">
+          <span class="${pctCls(ch7)}">7ว ${pctTxt(ch7)}</span>
+          <span class="${pctCls(ch30)}">30ว ${pctTxt(ch30)}</span>
+          <span class="${athCls(c.ath_change_percentage)}">จาก ATH ${athTxt(c.ath_change_percentage)}</span>
+        </div>
+      </div>
+      <div class="cc-spark">${sparkCellHTML(c)}</div>
+    </div>
+    <div class="cc-bot">
+      ${sigBadgesHTML(c, an)}
+      ${rsiPillHTML(c, an)}
+      ${posChipHTML(c)}
+    </div>
+  </div>`;
+}
+
 function renderTable(){
   const tb = $('#tbody');
   const tipEl = $('#spark-tip');
@@ -2412,7 +2556,7 @@ function renderTable(){
   });
 
   const rate = state.rate, sym = curSym();
-  tb.innerHTML = list.map(c => {
+  const rowsHtml = list.map(c => {
     const an = anFor(c);
     const eScore = c._earlyScore || 0;
     const qScore = c._quickScore || 0;
@@ -2423,34 +2567,9 @@ function renderTable(){
     const ch7  = c.price_change_percentage_7d_in_currency ?? 0;
     const ch30 = c.price_change_percentage_30d_in_currency ?? 0;
 
-    const rsiPer = state.sparkRange === '30d' ? '30 วัน' : '7 วัน';
-    const rsiVal = an ? an.rsi : (state.sparkRange === '30d' ? '⏳' : '—');
-    let rsiCls = 'rsi-neutral';
-    let rsiTip = 'RSI (Relative Strength Index) วัดความเร็ว/ความแรงของการเปลี่ยนแปลงราคา ช่วง 0-100 (คำนวณจากกราฟ ' + rsiPer + ')';
-    if (!an && state.sparkRange === '30d'){
-      rsiTip = 'กำลังทยอยโหลดข้อมูล 30 วันของเหรียญนี้ (โหลดทีละเหรียญเพื่อกัน rate limit) — เมื่อพร้อม RSI จะคำนวณจากกราฟ 30 วันให้อัตโนมัติ';
-    }
-    if (an){
-      if (an.rsi >= 30 && an.rsi <= 50) rsiCls = 'rsi-sweet';
-      else if (an.rsi < 30) rsiCls = 'rsi-oversold';
-      else if (an.rsi > 68) rsiCls = 'rsi-overbought';
-      const zone = an.rsi < 30 ? 'RSI ต่ำกว่า 30 (Oversold) — ราคาร่วงแรงจนสุดขั้ว มักพบการดีดตัวขึ้นบ้าง แต่ก็อาจไหลต่อได้'
-        : an.rsi <= 50 ? 'RSI 30-50 (โซนสะสม) — แรงขายเบาบาง ราคาพักฐาน เป็นช่วงที่นักวิเคราะห์มักจับตาหาจังหวะ'
-        : an.rsi <= 68 ? 'RSI 50-68 (ฝั่งบวก) — ผู้ซื้อกำลังมีเปรียบ โมเมนตัมเป็นขาขึ้น แต่ยังไม่ร้อนแรง'
-        : 'RSI สูงกว่า 68 (Overbought) — ราคาวิ่งแรงจนร้อน เสี่ยงถูกขายทำกำไร ระวังการไล่ราคา';
-      rsiTip = 'RSI (Relative Strength Index) วัดความเร็ว/ความแรงของการเปลี่ยนแปลงราคา ช่วง 0-100 (คำนวณจากกราฟ ' + rsiPer + ')\nค่าของเหรียญนี้: ' + an.rsi + '\n' + zone;
-    }
+    const rsiPill = rsiPillHTML(c, an);
 
-    let tagBadges;
-    if (an && an.tags && an.tags.length){
-      tagBadges = an.tags.slice(0, 2).map(t =>
-        `<span class="badge ${t.cls || 'early-tag'}" title="${esc(TAG_HELP[t.id] || t.text)}">${t.icon} ${esc(t.text.split(' ')[0])}</span>`
-      ).join('');
-    } else if (!an && state.sparkRange === '30d'){
-      tagBadges = '<span class="spark-loading" title="กำลังทยอยโหลดข้อมูล 30 วันของเหรียญนี้ — เมื่อพร้อมจะแสดงสัญญาณที่คำนวณจากกราฟ 30 วัน">⏳ …</span>';
-    } else {
-      tagBadges = '<span class="spark-none" title="ยังไม่มีสัญญาณเด่น — อินดิเคเตอร์ (RSI / MACD / Bollinger Bands) ยังไม่ชี้อะไรชัดเจนในจังหวะนี้ กดเข้าไปดูรายละเอียดเหรียญได้">—</span>';
-    }
+    const tagBadges = sigBadgesHTML(c, an);
 
     const isHighEarly = eScore >= 75;
     const isAccHi = state.mode === 'acc30' && c._acc && c._acc.qualified;
@@ -2473,7 +2592,7 @@ function renderTable(){
       <td class="${pctCls(ch30)}">${pctTxt(ch30)}</td>
       <td class="${athCls(c.ath_change_percentage)}" title="${c.ath != null ? 'ราคาสูงสุดตลอดกาล: ' + fmtPrice(c.ath, rate) + ' ' + sym + (c.ath_date ? ' • ' + athDateTxt(c.ath_date) : '') + (athUpsideTxt(c.ath_change_percentage) ? ' • ถ้าราคากลับไปถึง ATH = ' + athUpsideTxt(c.ath_change_percentage) : '') : 'ไม่มีข้อมูล ATH ในโหมดสำรอง'}">${athTxt(c.ath_change_percentage)}</td>
       <td>${posChipHTML(c)}</td>
-      <td><span class="rsi-pill ${rsiCls}" title="${esc(rsiTip)}">${rsiVal}</span></td>
+      <td>${rsiPill}</td>
       <td><div class="sig-cell">${tagBadges}</div></td>
       <td>${sparkCellHTML(c)}</td>
       <td>
@@ -2483,7 +2602,18 @@ function renderTable(){
         </span>
       </td>
     </tr>`;
-  }).join('') || '<tr class="loading-row"><td colspan="12">ไม่พบเหรียญที่ตรงตามเงื่อนไขตัวกรอง</td></tr>';
+  }).join('');
+  // จอเล็ก → การ์ด / จอปกติ → ตาราง (สลับให้อัตโนมัติ ข้อมูลชุดเดียวกัน การเรียงเดียวกัน)
+  if (isMobileLayout()){
+    tb.innerHTML = '';
+    $('#coin-cards').innerHTML = list.length
+      ? list.map(coinCardHTML).join('')
+      : `<div class="hint" style="padding:30px;text-align:center">${state.markets.length ? 'ไม่พบเหรียญที่ตรงตามเงื่อนไขตัวกรอง' : '⏳ กำลังโหลดข้อมูลตลาด...'}</div>`;
+  } else {
+    $('#coin-cards').innerHTML = '';
+    tb.innerHTML = rowsHtml || '<tr class="loading-row"><td colspan="12">ไม่พบเหรียญที่ตรงตามเงื่อนไขตัวกรอง</td></tr>';
+  }
+  syncCardSort();
 }
 
 /* ---------------- Drawer ---------------- */
@@ -4201,6 +4331,20 @@ function wireEvents(){
     const tr = e.target.closest('tr[data-id]');
     if (tr) openDrawer(tr.dataset.id);
   });
+
+  // Mobile card click (จอเล็ก — แตะการ์ดเปิดรายละเอียดเหมือนคลิกแถวตาราง)
+  $('#coin-cards').addEventListener('click', e => {
+    const card = e.target.closest('.coin-card[data-id]');
+    if (card) openDrawer(card.dataset.id);
+  });
+
+  // หมุนจอ/ย่อขยายหน้าต่างจนข้ามจุด 768px → สลับตาราง ↔ การ์ดให้อัตโนมัติ
+  try {
+    const mq = window.matchMedia(MQ_MOBILE);
+    const onMq = () => renderTable();
+    if (mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq.addListener) mq.addListener(onMq);   // Safari เก่า
+  } catch(e){}
 
   // HD Sparkline Tooltip (Min/Max/% เปลี่ยนแปลง)
   $('#tbody').addEventListener('mousemove', moveSparkTip);
