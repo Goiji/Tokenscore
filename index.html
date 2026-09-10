@@ -1440,18 +1440,31 @@ async function cgFetch(path, params, retries = 3){
    แหล่งข้อมูลตลาดแบบสำรอง 3 ชั้น (Auto Failover)
    1) CoinGecko (หลัก) → 2) CoinMarketCap ผ่าน Netlify Function → 3) Binance (ไม่ต้องใช้คีย์)
    ================================================== */
+
+/* ---- เหรียญที่ตัดออกจากลิสต์ (ปรับได้): ใส่ id ของ CoinGecko หรือ symbol พิมพ์ใหญ่ ---- */
+const EXCLUDED_COIN_IDS = new Set([
+  'ondo-us-dollar-yield'      // Ondo US Dollar Yield (USDY) — ตราสารหนี้โทเคนที่มีผลตอบแทน ไม่ใช่เหรียญที่น่าจับตาในบริบทนี้
+]);
+const EXCLUDED_COIN_SYMBOLS = new Set(['USDY']);
+function isExcludedCoin(c){
+  return EXCLUDED_COIN_IDS.has(c.id) || EXCLUDED_COIN_SYMBOLS.has(String(c.symbol || '').toUpperCase());
+}
+function filterExcluded(list){ return (list || []).filter(c => !isExcludedCoin(c)); }
 async function loadMarkets(){
   // 1) CoinGecko
   try {
     const data = await cgFetch('/coins/markets', {
-      vs_currency:'usd', order:'market_cap_desc', per_page:50, page:1,
+      vs_currency:'usd', order:'market_cap_desc', per_page:55, page:1,   // 55 = 50 + เผื่อเหรียญที่ถูกตัดออก
       sparkline:true, price_change_percentage:'1h,24h,7d,14d,30d'
     });
-    if (Array.isArray(data) && data.length){
-      enrichMarkets(data);
-      state.markets = data;
-      state.dataSource = 'coingecko';
-      return state.markets;
+    if (Array.isArray(data)){
+      const filtered = filterExcluded(data);
+      if (filtered.length){
+        enrichMarkets(filtered);
+        state.markets = filtered;
+        state.dataSource = 'coingecko';
+        return state.markets;
+      }
     }
     throw new Error('CoinGecko ตอบชุดข้อมูลว่าง');
   } catch(eCG){
@@ -1497,7 +1510,7 @@ async function cmcProxyFetch(cmcPath, params){
   }
 }
 async function loadMarketsCMC(){
-  const js = await cmcProxyFetch('/v1/cryptocurrency/listings/latest', { start: 1, limit: 50, convert: 'USD' });
+  const js = await cmcProxyFetch('/v1/cryptocurrency/listings/latest', { start: 1, limit: 55, convert: 'USD' });  // 55 = 50 + เผื่อเหรียญที่ถูกตัดออก
   const items = (js && js.data) || [];
   if (!items.length) throw new Error('CMC ตอบชุดข้อมูลว่าง');
   const prevBySymbol = {};
@@ -1523,8 +1536,10 @@ async function loadMarketsCMC(){
       _fromCMC: true
     };
   });
-  enrichMarkets(out);
-  return out;
+  const filtered = filterExcluded(out);
+  if (!filtered.length) throw new Error('CMC ตอบชุดข้อมูลว่าง');
+  enrichMarkets(filtered);
+  return filtered;
 }
 async function loadGlobalCMC(){
   const js = await cmcProxyFetch('/v1/global-metrics/quotes/latest', {});
@@ -1571,7 +1586,7 @@ async function loadMarketsBinance(){
   const all = await bFetch('/api/v3/ticker/24hr', {});
   const byPair = {};
   for (const t of all) byPair[t.symbol] = t;
-  const out = [];
+  let out = [];
   for (const s of syms){
     const pair = byPair[s + 'USDT'] || byPair[s + 'USD'] || byPair[s + 'BUSD'];
     if (!pair) continue;
@@ -1594,6 +1609,7 @@ async function loadMarketsBinance(){
       _pair: pair.symbol
     });
   }
+  out = filterExcluded(out);
   if (!out.length) throw new Error('Binance: ไม่พบคู่เทรดที่ตรงกับเหรียญในลิสต์');
   // ดึง klines เพิ่ม: กราฟย่อย 7 วัน (รายชั่วโมง) + % 7วัน/30วัน (รายวัน) — ทีละชุดกันยิงพร้อมกันเกิน
   const BATCH = 10;
@@ -1652,7 +1668,7 @@ function loadCachedMarkets(){
     if (d && Array.isArray(d.markets) && d.markets.length){
       if (d.thb && d.thb > 1) CUR.THB.rate = d.thb;
       if (d.global) state.global = d.global;
-      state.markets = enrichMarkets(d.markets);
+      state.markets = enrichMarkets(filterExcluded(d.markets));
       state.lastGoodTs = d.ts || Date.now();
       return d;
     }
@@ -1695,7 +1711,8 @@ async function loadOHLC(id, opts = {}){
   const hit = state.ohlcCache.get(id);
   if (hit && now - hit.ts < 10*60*1000) return hit.data;
   const data = await cgFetch('/coins/' + encodeURIComponent(id) + '/ohlc', { vs_currency:'usd', days:30 }, retries);
-  if (!Array.isArray(data)) throw new Error('rate limit / ไม่ได้รับข้อมูลจาก CoinGecko'); // ต่างจาก "ข้อมูลแท่งน้อย" ตรงนี้คือโดน 429 หรือถูกปฏิเสธ
+  if (data === null) throw new Error('ไม่พบข้อมูลเหรียญนี้บน CoinGecko (id ไม่ถูกต้อง)');
+  if (!Array.isArray(data)) throw new Error('โดน rate limit / ไม่ได้รับข้อมูลจาก CoinGecko'); // ต่างจาก "ข้อมูลแท่งน้อย" ตรงนี้คือโดน 429 หรือถูกปฏิเสธ
   if (data.length < 50) return null;
   state.ohlcCache.set(id, { ts: now, data });
   return data;
@@ -1709,6 +1726,7 @@ async function loadOHLC(id, opts = {}){
    • เก็บข้อมูลที่โหลดสำเร็จไว้ในเครื่อง 45 นาที → เปิดหน้าใหม่แสดงได้ทันที            */
 const ACC30_PACE = { min: 3500, max: 12000, start: 4200, cooldown: 90000, maxTries: 3, ttlMs: 45*60*1000 };
 let acc30Busy = false;
+let acc30Paused = false;     // พักคิวช่วงที่เปิด Drawer — ให้ rate budget ทั้งหมดกับกราฟที่ผู้ใช้กำลังดู (กราฟจะได้ไม่สะดุด)
 let acc30UITimer = null;
 let acc30Attempts = 0;        // จำนวนครั้งที่ยิง OHLC ไปแล้ว (ใช้ปรับข้อความสถานะ)
 let acc30Delay = ACC30_PACE.start;
@@ -1809,6 +1827,11 @@ async function ensureAcc30Data(){
   const setStatus = t => { if (statusEl){ statusEl.classList.remove('hidden'); statusEl.textContent = t; } };
   try {
     while (true){
+      if (acc30Paused){                                          // ผู้ใช้กำลังเปิดดูรายละเอียดเหรียญ → พักก่อน
+        setStatus('⏸️ 📦 พักโหลดกราฟ 30ว ชั่วคราว (กำลังใช้ข้อมูลร่วมกับหน้าต่างรายละเอียด)');
+        await sleep(800);
+        continue;
+      }
       // 1) เหรียญจากคิว retry ที่ถึงเวลาลองใหม่แล้ว
       let id = null;
       for (const [rid, r] of acc30RetryQueue){
@@ -2664,6 +2687,7 @@ function openDrawer(coinId){
   $('#overlay').classList.remove('hidden');
   $('#drawer').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
+  acc30Paused = true;          // พักคิวโหลด 30ว พื้นหลัง — กันแย่ง rate limit กับกราฟที่ผู้ใช้กำลังดู
   switchTab('score');
   $('#ring-area').innerHTML = '<span class="hint">⏳ กำลังโหลดข้อมูลกราฟ 30 วัน...</span>';
   $('#subscore').innerHTML = '';
@@ -2689,13 +2713,52 @@ function closeDrawer(){
   document.body.style.overflow = '';
   state.detail = null;
   state.detailData = null;
+  acc30Paused = false;         // กลับมาโหลดคิว 30ว ต่อ
+  ensureAcc30Data();
 }
 
+/* ---- โหลด OHLC 30 วันสำหรับ Drawer — มีทางสำรองให้กราฟเสถียรขึ้น ----
+   1) CoinGecko (id จริง หรือ slug ของ CMC ซึ่งตรงกับ CG กรณีส่วนใหญ่)
+   2) ถ้าโดน rate limit / CG ล่ม / โหมด Binance → ใช้ klines 4h × 180 แท่ง (= 30 วัน) จาก Binance */
+async function loadOHLCDetail(coin){
+  let cgErr = null;
+  let cgId = coin.id;
+  if (cgId && cgId.startsWith('cmc-')) cgId = cgId.slice(4);
+  if (cgId && !cgId.startsWith('bin-')){
+    try { return await loadOHLC(cgId, { retries: 2 }); }   // 2 รอบพอ — ช้ากว่านี้ไปสำรอง Binance เร็วกว่า
+    catch(e){ cgErr = e; }
+  }
+  const sym = String(coin.symbol || '').toUpperCase();
+  const pair = coin._pair || (sym ? sym + 'USDT' : null);
+  if (pair){
+    try {
+      const now = Date.now();
+      const hit = state.ohlcCache.get(coin.id);
+      if (hit && now - hit.ts < 10*60*1000) return hit.data;
+      const k = await bFetch('/api/v3/klines', { symbol: pair, interval: '4h', limit: 180 });
+      if (Array.isArray(k) && k.length >= 50){
+        const arr = k.map(x => [x[0], +x[1], +x[2], +x[3], +x[4]]);
+        state.ohlcCache.set(coin.id, { ts: now, data: arr });
+        return arr;
+      }
+      if (Array.isArray(k) && k.length) return null;   // แท่งน้อยเกินจริง
+      throw new Error('Binance ตอบชุดข้อมูลว่าง');
+    } catch(e2){
+      throw (cgErr || e2);   // แสดง error ของแหล่งหลัก (เข้าใจง่ายกว่า)
+    }
+  }
+  throw (cgErr || new Error('ไม่พบแหล่งข้อมูลกราฟสำหรับเหรียญนี้'));
+}
+
+let detailToken = 0;   // กัน race: ผู้ใช้กดเหรียญใหม่ก่อนเหรียญเก่าโหลดเสร็จ → เหรียญเก่าต้องไม่เขียนทับ
 async function loadDetail(){
   const coin = state.detail;
   if (!coin) return;
+  const my = ++detailToken;
+  const stale = () => my !== detailToken || state.detail !== coin;
   try {
-    const ohlc = await loadOHLC(coin.id);
+    const ohlc = await loadOHLCDetail(coin);
+    if (stale()) return;
     if (!ohlc){
       $('#ring-area').innerHTML = '<span class="hint">⚠️ ข้อมูลกราฟไม่เพียงพอสำหรับเหรียญนี้</span>';
       return;
@@ -2713,15 +2776,19 @@ async function loadDetail(){
     state.detailData = { d, score, acc, accS };
     renderScore(coin, d, score);
   } catch(e){
+    if (stale()) return;
     // โหลด OHLC ไม่สำเร็จ (เช่น rate limit) — ถ้ามีข้อมูลฐาน 30 วันค้างไว้ในเครื่อง ยังแสดงโครงสร้าง+แผนเทรดได้
     const rec = state.acc30.get(coin.id);
+    const retryBtn = ' <button class="btn small" id="dr-retry-ohlc">🔄 ลองใหม่</button>';
     if (rec && rec.m){
       state.detailData = { d: null, score: null, acc: rec.m, accS: acc30Score(coin, rec.m) };
       renderAccDrawerBox(coin, null);
-      $('#ring-area').innerHTML = '<span class="hint">⚠️ โหลดกราฟ/อินดิเคเตอร์ล่าสุดไม่สำเร็จ (' + esc(e.message) + ') — แสดง<strong>โครงสร้างฐาน 30 วัน</strong>จากข้อมูลล่าสุดที่โหลดสำเร็จไว้ (อายุ ' + Math.round((Date.now() - rec.ts)/60000) + ' นาที)</span>';
+      $('#ring-area').innerHTML = '<span class="hint">⚠️ โหลดกราฟ/อินดิเคเตอร์ล่าสุดไม่สำเร็จ (' + esc(e.message) + ') — แสดง<strong>โครงสร้างฐาน 30 วัน</strong>จากข้อมูลล่าสุดที่โหลดสำเร็จไว้ (อายุ ' + Math.round((Date.now() - rec.ts)/60000) + ' นาที)' + retryBtn + '</span>';
     } else {
-      $('#ring-area').innerHTML = '<span class="hint">⚠️ โหลดข้อมูลไม่สำเร็จ (' + esc(e.message) + ') — อาจติด rate limit ของ CoinGecko ลองปิด-เปิดหน้าต่างนี้อีกครั้งใน 1-2 นาที</span>';
+      $('#ring-area').innerHTML = '<span class="hint">⚠️ โหลดข้อมูลไม่สำเร็จ (' + esc(e.message) + ') — อาจติด rate limit ชั่วคราว' + retryBtn + '</span>';
     }
+    const rb = $('#dr-retry-ohlc');
+    if (rb) rb.onclick = () => loadDetail();
   }
 }
 
