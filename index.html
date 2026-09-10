@@ -3429,15 +3429,15 @@ function renderAccDrawerBox(coin, d){
    กฎพื้นฐานตามคู่มือ: ปิดแท่งเขียว = จังหวะหลักของระบบ • ปิดแท่งแดง = ฝั่งออกไม้ • เหมาะกับไทม์เฟรมใหญ่ */
 const CDC_FAST = 12, CDC_SLOW = 26;
 const cdcCache = new Map();   // coinId → [{t, c}] ราคาปิดรายวัน ~2 ปี (โหลดครั้งเดียวต่อเหรียญต่อการเปิดหน้า)
-const CDC_COLORS = { green:'#2dd4a7', yellow:'#f5b63f', orange:'#f79a4e', red:'#f4576e', aqua:'#67e8f9', blue:'#4f7cff' };
-const CDC_ZONES = {
-  green:  { name:'โซนเขียว — ขาขึ้นเต็มตัว', hint:'ราคาปิดเหนือ EMA12 และ EMA12 > EMA26 — ตามคู่มือต้นฉบับ "ปิดแท่งเขียว" คือจังหวะหลักของระบบ' },
-  yellow: { name:'โซนเหลือง — ย่อตัวในขาขึ้น (Prebuy)', hint:'เทรนด์ยังขึ้น แต่ราคาย่อลงมาระหว่างสองเส้น — ผู้ใช้ระบบมักรอยืนยัน (เช่น กลับเป็นโซนเขียว) ก่อน' },
-  orange: { name:'โซนส้ม — ย่อลึกใต้สองเส้นในขาขึ้น', hint:'EMA12 ยังเหนือ EMA26 แต่ราคาหลุดใต้ทั้งสองเส้น — คู่มือต้นฉบับจัดไว้ฝั่งขาขึ้น รอกลับเป็นโซนเขียวก่อน' },
-  red:    { name:'โซนแดง — ขาลงเต็มตัว', hint:'ราคาปิดต่ำกว่า EMA12 และ EMA12 < EMA26 — ตามคู่มือต้นฉบับ "ปิดแท่งแดง" คือฝั่งออกไม้ของระบบ' },
-  aqua:   { name:'โซนฟ้าอ่อน — เด้งในขาลง', hint:'เทรนด์ยังลง ราคาเด้งขึ้นมาระหว่างสองเส้น — ยังเป็นฝั่งขาลงของระบบ' },
-  blue:   { name:'โซนน้ำเงิน — เด้งเหนือสองเส้นในขาลง', hint:'ราคาเด้งแรงเหนือ EMA ทั้งสอง แต่ EMA12 ยังต่ำกว่า EMA26 — ฝั่งขาลงของระบบ' }
+/* แสดงผลแบบเข้าใจง่ายตามกฎพื้นฐานของระบบ: เขียว = ปิดแท่งเขียว (จังหวะหลัก) • แดง = ปิดแท่งแดง (ฝั่งออกไม้)
+   ส่วนโซนเปลี่ยนผ่านทั้ง 4 ของต้นฉบับ (เหลือง/ส้ม/ฟ้า/น้ำเงิน) รวมเป็น "ยังไม่ชัด — ระหว่างรอ" รายละเอียดอยู่ใน tooltip */
+const CDC_COLORS = { green:'#2dd4a7', red:'#f4576e', wait:'#8ea3c8' };
+const CDC_ZONE_SIMPLE = {
+  green: { name:'โซนเขียว — จังหวะหลักของระบบ', hint:'ราคาปิดเหนือ EMA12 และ EMA12 ชี้ขึ้นเหนือ EMA26 — ตามคู่มือต้นฉบับ "ปิดแท่งเขียว" คือจังหวะเข้าไม้หลักของระบบ' },
+  red:   { name:'โซนแดง — ฝั่งออกไม้ของระบบ', hint:'ราคาปิดต่ำกว่า EMA12 และ EMA12 ชี้ลงต่ำกว่า EMA26 — ตามคู่มือต้นฉบับ "ปิดแท่งแดง" คือฝั่งออกไม้' },
+  wait:  { name:'ยังไม่ชัด — ระหว่างรอ', hint:'ราคายังไม่ปิดจังหวะเขียวหรือแดงเต็มตัว (อยู่โซนเปลี่ยนผ่านของระบบ เช่น ย่อตัวในขาขึ้น หรือเด้งในขาลง) — รอให้ปิดแท่งชัดเป็นเขียวหรือแดงก่อน' }
 };
+function cdcSimple(zone){ return zone === 'green' ? 'green' : zone === 'red' ? 'red' : 'wait'; }
 function emaSeriesVals(arr, n){
   const out = new Array(arr.length).fill(null);
   if (arr.length < n) return out;
@@ -3516,15 +3516,15 @@ async function renderCDCPanel(coin){
   const wRes = wCloses.length >= 40 ? cdcCalc(wCloses) : null;   // ต้องการ ~9 เดือนขึ้นไปจึงคำนวณเฟรม W ได้
   const card = (tf, res, unit, needMore) => {
     if (needMore) return `<div class="cdc-card"><div class="cdc-tf">${tf}</div><div class="cdc-zone" style="color:var(--tx3)">ข้อมูลยังไม่พอ</div><div class="cdc-meta">มีข้อมูล ${wCloses.length} สัปดาห์ — ต้องการอย่างน้อย ~40 สัปดาห์ (9 เดือน) จึงคำนวณ EMA26 รายสัปดาห์ได้อย่างมีนัยสำคัญ</div></div>`;
-    const z = CDC_ZONES[res.zone] || CDC_ZONES.green;
+    const st = cdcSimple(res.zone);
+    const z = CDC_ZONE_SIMPLE[st];
     const i = res.iLast;
     const trendUp = res.fast[i] > res.slow[i];
     return `<div class="cdc-card" title="${esc(z.hint)}">
       <div class="cdc-tf">${tf}</div>
-      <div class="cdc-zone" style="color:${CDC_COLORS[res.zone]}"><span class="cdc-dot" style="background:${CDC_COLORS[res.zone]}"></span>${esc(z.name)}</div>
-      <div class="cdc-meta">ราคาปิดล่าสุด <b style="color:var(--tx)">${fmtPrice(res.zone === undefined ? 0 : (tf.includes('รายวัน') ? days[days.length-1].c : wCloses[wCloses.length-1]), rate)}</b><br>
-      EMA${CDC_FAST} ${fmtPrice(res.fast[i], rate)} • EMA${CDC_SLOW} ${fmtPrice(res.slow[i], rate)}<br>
-      เทรนด์: EMA${CDC_FAST} ${trendUp ? '&gt;' : '&lt;'} EMA${CDC_SLOW} (${trendUp ? 'ขาขึ้น' : 'ขาลง'}) • อยู่ในโซนนี้ ${res.barsInZone} ${unit}</div>
+      <div class="cdc-zone" style="color:${CDC_COLORS[st]}"><span class="cdc-dot" style="background:${CDC_COLORS[st]}"></span>${esc(z.name)}</div>
+      <div class="cdc-meta">ราคาปิดล่าสุด <b style="color:var(--tx)">${fmtPrice(tf.includes('รายวัน') ? days[days.length-1].c : wCloses[wCloses.length-1], rate)}</b><br>
+      เทรนด์ EMA${CDC_FAST} vs EMA${CDC_SLOW}: ${trendUp ? 'ขาขึ้น ▲' : 'ขาลง ▼'} • อยู่ในสถานะนี้ ${res.barsInZone} ${unit}</div>
     </div>`;
   };
   let html = '<p class="hint" style="margin:0 0 2px">คำนวณจากราคาปิดรายวัน ' + days.length.toLocaleString('th-TH') + ' วัน (EMA ' + CDC_FAST + '/' + CDC_SLOW + ' ตามต้นฉบับ) — ชี้ที่การ์ดเพื่อดูความหมายของโซน</p>';
@@ -3532,23 +3532,21 @@ async function renderCDCPanel(coin){
   html += card('เฟรมรายวัน (D)', dRes, 'วัน', false);
   html += card('เฟรมรายสัปดาห์ (W)', wRes, 'สัปดาห์', !wRes);
   html += '</div>';
-  // สรุปประกอบการตัดสินใจ (ภาษากลาง อ้างกฎของระบบ CDC ไม่ใช่คำแนะนำการลงทุน)
-  const bull = z => z === 'green' || z === 'yellow' || z === 'orange';
+  // สรุปประกอบการตัดสินใจ — พูดแค่ เขียว/แดง/ยังไม่ชัด ตามกฎพื้นฐานของระบบ (ภาษากลาง ไม่ใช่คำแนะนำการลงทุน)
+  const ds = cdcSimple(dRes.zone), ws = wRes ? cdcSimple(wRes.zone) : null;
   let sum;
-  if (wRes && dRes.zone === 'green' && wRes.zone === 'green'){
-    sum = 'ทั้งเฟรม D และ W ปิดอยู่ใน<b>โซนเขียว</b> — สองไทม์เฟรมฝั่งขาขึ้นตรงกัน ตามกฎพื้นฐานของระบบ CDC ("ปิดแท่งเขียว" คือจังหวะหลัก)';
-  } else if (wRes && wRes.zone === 'green' && dRes.zone === 'yellow'){
-    sum = 'W ยังเป็น<b>โซนเขียว</b> ส่วน D ย่อตัวอยู่<b>โซนเหลือง (Prebuy)</b> — ช่วงรอยืนยันของเฟรมรายวัน ยังไม่ใช่แท่งปิดเขียวของ D';
-  } else if (wRes && wRes.zone === 'green' && dRes.zone === 'orange'){
-    sum = 'W เป็น<b>โซนเขียว</b> ส่วน D ย่อลึกถึง<b>โซนส้ม</b> (ใต้ EMA ทั้งสอง) — คู่มือต้นฉบับจัดฝั่งขาขึ้น รอ D กลับเป็นโซนเขียวก่อนจะเป็นจังหวะหลักของระบบ';
-  } else if (dRes.zone === 'red' || (wRes && wRes.zone === 'red')){
-    sum = 'มีเฟรมที่ปิดอยู่ใน<b>โซนแดง</b>' + (dRes.zone === 'red' && wRes && wRes.zone === 'red' ? ' ทั้ง D และ W' : (dRes.zone === 'red' ? ' (เฟรม D)' : ' (เฟรม W)')) + ' — ตามกฎพื้นฐานของระบบ CDC คือฝั่งออกไม้/ไม่ใช่จังหวะเข้าไม้หลัก';
-  } else if (wRes && bull(wRes) && !bull(dRes)){
-    sum = 'W ฝั่งขาขึ้น แต่ D อยู่ฝั่งขาลง — สองเฟรมยังไม่สอดคล้องกัน ตามแนวทางระบบ CDC มักรอให้ทั้งสองเฟรมชัดเจนไปทางเดียวกันก่อน';
-  } else if (!wRes){
+  if (!wRes){
     sum = 'แสดงเฉพาะเฟรมรายวัน (D) — ข้อมูลรายสัปดาห์ยังไม่พอสำหรับเฟรม W';
+  } else if (ds === 'green' && ws === 'green'){
+    sum = 'ทั้ง D และ W อยู่<b>โซนเขียว</b> — สองไทม์เฟรมฝั่งขาขึ้นตรงกัน ตามกฎของระบบ ("ปิดแท่งเขียว" คือจังหวะหลัก)';
+  } else if (ds === 'red' && ws === 'red'){
+    sum = 'ทั้ง D และ W อยู่<b>โซนแดง</b> — สองไทม์เฟรมฝั่งขาลงตรงกัน ตามกฎของระบบ ("ปิดแท่งแดง" คือฝั่งออกไม้)';
+  } else if (ds === 'red' || ws === 'red'){
+    sum = 'มีเฟรมที่อยู่<b>โซนแดง</b>' + (ds === 'red' && ws === 'red' ? '' : (ds === 'red' ? ' (เฟรม D)' : ' (เฟรม W)')) + ' — ตามกฎของระบบ ฝั่งนี้ไม่ใช่จังหวะเข้าไม้หลัก';
+  } else if (ds === 'wait' || ws === 'wait'){
+    sum = 'มีเฟรมที่<b>ยังไม่ชัด</b>' + (ds === 'wait' && ws === 'wait' ? ' ทั้ง D และ W' : (ds === 'wait' ? ' (เฟรม D)' : ' (เฟรม W)')) + ' — ราคายังไม่ปิดแท่งเขียว/แดงเต็มตัว ตามแนวทางระบบคือช่วงรอให้ชัดเจนก่อน';
   } else {
-    sum = 'เฟรม D และ W ยังไม่เข้าเกณฑ์จังหวะหลักของระบบ (โซนเขียวทั้งคู่) — ตามแนวทาง CDC คือช่วงรอสถานะให้ชัดเจน';
+    sum = 'D กับ W สวนทางกัน (เฟรมหนึ่งเขียว อีกเฟรมแดง) — ตามแนวทางระบบ มักรอให้สองเฟรมชี้ไปทางเดียวกันก่อน';
   }
   html += '<div class="cdc-sum"><b>ประกอบการตัดสินใจ:</b> ' + sum + '</div>';
   html += '<p class="hint" style="margin:10px 0 0">อ้างอิงตรรกะ CDC ActionZone V3 2020 โดย piriya33 (TradingView, สคริปต์เปิด) — ระบบ 2 EMA (' + CDC_FAST + '/' + CDC_SLOW + ') อ่านจากแท่งปิด • คู่มือต้นฉบับแนะนำให้ใช้กับไทม์เฟรมใหญ่ • เพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน</p>';
