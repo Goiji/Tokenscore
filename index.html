@@ -347,6 +347,9 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
 /* ลิงก์ไปหน้าเหรียญบน CoinGecko */
 .dr-cg{font-size:11px;color:var(--acc2);text-decoration:none;font-weight:700;margin-left:6px;white-space:nowrap}
 .dr-cg:hover{color:var(--acc);text-decoration:underline}
+.dr-share{font-size:11px;color:var(--tx2);background:var(--card2);border:1px solid var(--line);border-radius:999px;
+  padding:2px 10px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:6px;white-space:nowrap}
+.dr-share:hover{color:var(--tx);border-color:var(--acc2)}
 .ab-more{display:inline-block;margin-top:8px;font-size:12px;color:var(--acc2);text-decoration:none;font-weight:700}
 .ab-more:hover{color:var(--acc);text-decoration:underline}
 
@@ -592,7 +595,7 @@ footer{color:var(--tx3);font-size:11.5px;margin-top:24px;line-height:1.7}
     <img id="dr-icon" src="" alt="">
     <div style="flex:1">
       <div class="nm" id="dr-name">—</div>
-      <div class="sy"><span id="dr-sub">—</span><a id="dr-cg" class="dr-cg hidden" target="_blank" rel="noopener" title="เปิดหน้าข้อมูลของเหรียญนี้บน CoinGecko (แท็บใหม่)">↗ CoinGecko</a></div>
+      <div class="sy"><span id="dr-sub">—</span><a id="dr-cg" class="dr-cg hidden" target="_blank" rel="noopener" title="เปิดหน้าข้อมูลของเหรียญนี้บน CoinGecko (แท็บใหม่)">↗ CoinGecko</a><a id="dr-tv" class="dr-cg hidden" target="_blank" rel="noopener" title="เปิดกราฟราคาเหรียญนี้บน TradingView (แท็บใหม่) — ต่อยอดใส่อินดี้ CDC ActionZone V3 2020 ได้เลย">↗ TradingView</a><button id="dr-share" class="dr-share hidden" title="คัดลอกลิงก์ของเหรียญนี้ ส่งให้เพื่อนเปิดดูเหรียญนี้โดยตรง">🔗 แชร์เหรียญนี้</button></div>
     </div>
     <div style="text-align:right">
       <div id="dr-price" style="font-weight:800;font-size:16px">—</div>
@@ -2493,6 +2496,38 @@ function renderTable(){
    รูปแบบทางการ: www.coingecko.com/en/coins/{id}
    • โหมด CMC (id = cmc-slug) → slug มักตรงกับ CG → ใช้ slug
    • โหมด Binance (id = bin-XXX) → ไม่มี id ของ CG → พาไปหน้าค้นหาด้วย symbol แทน */
+/* ---- ลิงก์เปิดกราฟบน TradingView (ปลายทางใส่อินดี้ CDC ActionZone ต่อได้) ----
+   โหมด Binance เรารู้คู่เทรดจริง → ชี้ BINANCE:คู่เทรดเป๊ะ
+   โหมดอื่น → ส่ง ticker เฉย ๆ ให้ TradingView เลือกตลาดที่ถูกต้องให้อัตโนมัติ */
+function tradingviewUrl(coin){
+  const sym = String(coin.symbol || '').toUpperCase();
+  if (coin.id && coin.id.startsWith('bin-')){
+    return 'https://www.tradingview.com/chart/?symbol=BINANCE:' + encodeURIComponent(coin._pair || (sym + 'USDT'));
+  }
+  return sym ? 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(sym + 'USDT') : 'https://www.tradingview.com/chart/';
+}
+/* ---- แชร์เหรียญเดี่ยว: ลิงก์ ?c=เหรียญ เปิดหน้านี้แล้วพาตรงถึงเหรียญ ---- */
+function shareCoin(coin){
+  const url = location.origin + location.pathname + '?c=' + encodeURIComponent(coin.id);
+  if (navigator.share){
+    navigator.share({ title: coin.name + ' • TokenScore', text: 'ดูข้อมูล ' + coin.name + ' บน TokenScore', url }).catch(() => {});
+  } else {
+    copyText(url);
+    toast('📋 คัดลอกลิงก์เหรียญนี้แล้ว — ส่งให้เพื่อนเปิดดูเหรียญนี้ได้เลย');
+  }
+}
+function copyText(txt){
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).catch(() => fallbackCopy(txt));
+  } else fallbackCopy(txt);
+}
+function fallbackCopy(txt){
+  const ta = document.createElement('textarea');
+  ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+}
 function coingeckoUrl(coin){
   let cgId = coin.id;
   if (cgId && cgId.startsWith('cmc-')) cgId = cgId.slice(4);
@@ -2745,6 +2780,34 @@ async function loadCoinAbout(coin){
   }
 }
 
+/* ---- ลิงก์เหรียญ + ปุ่ม back: เปิดเหรียญ → URL เป็น ?c=เหรียญ (กด back ของเบราว์เซอร์ = ปิดหน้าต่าง) ---- */
+let drawerPushedState = false;   // true = เราเป็นคน push ?c= เอง (ปิดแล้วต้อง history.back คืน)
+function pushCoinUrl(coinId){
+  try {
+    const had = new URLSearchParams(location.search).get('c');
+    if (had !== coinId){
+      history.pushState({ tsDrawer: coinId }, '', location.pathname + '?c=' + encodeURIComponent(coinId));
+      // จำว่า push นี้มาจาก "หน้าพื้นฐาน (ไม่มี ?c=)" หรือกำลังสลับจากเหรียญอื่น —
+      // ถ้าซ้อนกันหลายชั้น (A→B) การกด ✕ ต้องปิดเลย ไม่ใช่ย้อนกลับไปเปิดเหรียญก่อนหน้า
+      drawerPushedState = !had;
+    }
+  } catch(e){}
+}
+function closeDrawerUI(){
+  $('#overlay').classList.add('hidden');
+  $('#drawer').classList.add('hidden');
+  document.body.style.overflow = '';
+  state.detail = null;
+  state.detailData = null;
+  acc30Paused = false;         // กลับมาโหลดคิว 30ว ต่อ
+  ensureAcc30Data();
+}
+function closeDrawer(){
+  if (drawerPushedState){ drawerPushedState = false; history.back(); return; }   // popstate จะปิด UI ให้
+  try { if (new URLSearchParams(location.search).get('c')) history.replaceState(null, '', location.pathname); } catch(e){}
+  closeDrawerUI();
+}
+
 function openDrawer(coinId){
   const coin = state.markets.find(c => c.id === coinId);
   if (!coin) return;
@@ -2756,6 +2819,11 @@ function openDrawer(coinId){
   $('#dr-sub').textContent = coin.symbol.toUpperCase() + (coin.market_cap_rank ? ' • อันดับ #' + coin.market_cap_rank : '');
   const cgLink = $('#dr-cg');
   if (cgLink){ cgLink.href = coingeckoUrl(coin); cgLink.classList.remove('hidden'); }
+  const tvLink = $('#dr-tv');
+  if (tvLink){ tvLink.href = tradingviewUrl(coin); tvLink.classList.remove('hidden'); }
+  const shBtn = $('#dr-share');
+  if (shBtn){ shBtn.onclick = () => shareCoin(coin); shBtn.classList.remove('hidden'); }
+  pushCoinUrl(coin.id);
   const abLink = $('#dr-about-cg');
   if (abLink){
     abLink.href = coingeckoUrl(coin);
@@ -2800,16 +2868,6 @@ function openDrawer(coinId){
   detailRange = '30d';
   loadDetail();
   loadCoinAbout(coin);
-}
-
-function closeDrawer(){
-  $('#overlay').classList.add('hidden');
-  $('#drawer').classList.add('hidden');
-  document.body.style.overflow = '';
-  state.detail = null;
-  state.detailData = null;
-  acc30Paused = false;         // กลับมาโหลดคิว 30ว ต่อ
-  ensureAcc30Data();
 }
 
 /* ---- โหลด OHLC 30 วันสำหรับ Drawer — มีทางสำรองให้กราฟเสถียรขึ้น ----
@@ -3847,6 +3905,13 @@ async function boot(){
   }
 
   await refreshAll();
+
+  // เปิดเหรียญจากลิงก์แชร์ (?c=เหรียญ) — รอให้ข้อมูลตลาดโหลดเสร็จก่อน
+  const cShare = new URLSearchParams(location.search).get('c');
+  if (cShare){
+    if (state.markets.some(x => x.id === cShare)) openDrawer(cShare);
+    else toast('ไม่พบเหรียญจากลิงก์ที่แชร์มาในลิสต์นี้', 'warn');
+  }
 }
 
 /* ---- รอบการอัปเดตอัตโนมัติ ----
@@ -4073,6 +4138,15 @@ function initTip(){
 
 function wireEvents(){
   initTip();
+  window.addEventListener('popstate', () => {
+    const c = new URLSearchParams(location.search).get('c');
+    if (!c){
+      drawerPushedState = false;
+      if (state.detail) closeDrawerUI();   // กด back ของเบราว์เซอร์ = ปิดหน้าต่างเหรียญ
+    } else if (state.markets.some(x => x.id === c) && (!state.detail || state.detail.id !== c)){
+      openDrawer(c);   // ย้อน/ไปหน้าไปตาม history แล้วเจอลิงก์เหรียญ → เปิดตามลิงก์นั้น
+    }
+  });
   $('#btn-refresh').onclick = () => refreshAll();
   $('#btn-share').onclick = () => shareSite();
   $('#btn-settings').onclick = openSettings;
