@@ -1,0 +1,7 @@
+# TokenScore — การตั้งค่า Netlify
+# เว็บเป็น static (ไฟล์เดียว index.html) + Netlify Function สำหรับ
+# สำรองข้อมูลจาก CoinMarketCap (คีย์ CMC อยู่ใน Environment variable)
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
