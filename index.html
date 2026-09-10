@@ -2653,6 +2653,44 @@ function truncateDesc(s, max){
   const sp = cut.lastIndexOf(' ');
   return (sp > 200 ? cut.slice(0, sp) : cut) + '…';
 }
+/* ---- แปลคำอธิบายอังกฤษ → ไทย (เมื่อ CoinGecko ไม่มีคำแปลไทยให้เหรียญนั้น) ----
+   ใช้บริการฟรีที่ไม่ต้องมีคีย์ ลองตามลำดับ:
+   1) Pollinations (AI ฟรีตัวเดียวกับที่แอปใช้เริ่มต้น)  2) Google Translate (gtx)
+   ทุกตัวล่ม → คืน null (ผู้เรียกจะแสดงอังกฤษไปก่อน แล้วลองแปลใหม่ครั้งถัดไป) */
+function looksThai(t){ return /[\u0E00-\u0E7F]/.test(String(t || '')); }
+async function transFetch(url, opts){
+  const ac = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  const timer = ac ? setTimeout(() => ac.abort(), 12000) : null;   // กันค้างนานถ้าบริการแปลไม่ตอบ
+  try {
+    return await fetch(url, ac ? { ...opts, signal: ac.signal } : opts);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+async function translateToThai(text){
+  const q = truncateDesc(text, 450);
+  if (!q) return null;
+  // 1) Pollinations (ฟรี ไม่ต้องใช้คีย์)
+  try {
+    const u = 'https://text.pollinations.ai/' + encodeURIComponent('แปลข้อความต่อไปนี้เป็นภาษาไทยให้อ่านลื่น เขียนแบบสารานุกรม ตอบเฉพาะคำแปลเท่านั้น:\n\n' + q);
+    const res = await transFetch(u, { headers: { Accept: 'text/plain' }, cache: 'no-store' });
+    if (res.ok){
+      const out = (await res.text()).trim();
+      if (out && looksThai(out) && out.length > 15) return out;
+    }
+  } catch(e){}
+  // 2) Google Translate แบบ gtx (ฟรี ไม่ต้องใช้คีย์)
+  try {
+    const u = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=th&dt=t&q=' + encodeURIComponent(q);
+    const res = await transFetch(u, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+    if (res.ok){
+      const js = await res.json();
+      const out = (Array.isArray(js) && Array.isArray(js[0])) ? js[0].map(x => (x && x[0]) || '').join('').trim() : '';
+      if (out && looksThai(out)) return out;
+    }
+  } catch(e){}
+  return null;
+}
 let aboutToken = 0;
 async function loadCoinAbout(coin){
   const box = $('#dr-about'), txt = $('#dr-about-text'), src = $('#dr-about-src');
@@ -2673,29 +2711,60 @@ async function loadCoinAbout(coin){
   }
   if (!cgId){ box.classList.add('hidden'); return; }
   const cache = getDescCache();
-  if (cache[cgId]){
-    txt.textContent = cache[cgId];
+  const rec = cache[cgId];
+  const recT = typeof rec === 'string' ? rec : (rec && rec.t) || '';   // รองรับแคชเก่า (สตริง) และแคชใหม่ ({t, lang})
+  if (recT && looksThai(recT)){
+    txt.textContent = recT;
     src.textContent = 'CoinGecko (แคชในเครื่อง)';
     box.classList.remove('hidden');
     return;
   }
+  // ยังไม่มีข้อความไทย → ดึงจาก CoinGecko (หรือใช้ข้อความอังกฤษที่แคชไว้) แล้วแปลเป็นไทย
+  let enText = recT;              // แคชเดิมเป็นอังกฤษ → มีข้อความแล้ว ข้ามไปขั้นแปลเลย
+  const needFetch = !enText;
   box.classList.remove('hidden');
   txt.textContent = '⏳ กำลังโหลดคำอธิบายเหรียญ...';
   src.textContent = '';
-  try {
-    const js = await cgFetch('/coins/' + encodeURIComponent(cgId), {
-      localization:'th', tickers:'false', market_data:'false',
-      community_data:'false', developer_data:'false', sparkline:'false'
-    }, 2);
-    if (my !== aboutToken) return;
-    const d = (js && js.description) || {};
-    let t = stripHtml(d.th && d.th.length > 80 ? d.th : d.en);   // ใช้ภาษาไทยถ้ามีคุณภาพพอ ไม่งั้นใช้อังกฤษ
-    if (!t){ box.classList.add('hidden'); return; }
-    t = truncateDesc(t);
-    cache[cgId] = t;
+  const saveCache = (t, lang) => {
+    cache[cgId] = { t, lang };
     try { store.set(DESC_KEY, JSON.stringify(cache)); } catch(e){}
-    txt.textContent = t;
-    src.textContent = 'CoinGecko';
+  };
+  try {
+    if (needFetch){
+      const js = await cgFetch('/coins/' + encodeURIComponent(cgId), {
+        localization:'th', tickers:'false', market_data:'false',
+        community_data:'false', developer_data:'false', sparkline:'false'
+      }, 2);
+      if (my !== aboutToken) return;
+      const d = (js && js.description) || {};
+      const th = stripHtml(d.th);
+      if (th && th.length >= 60){
+        // CoinGecko มีคำแปลไทยอยู่แล้ว — ใช้ได้เลย
+        const t = truncateDesc(th);
+        saveCache(t, 'th');
+        txt.textContent = t;
+        src.textContent = 'CoinGecko (ภาษาไทย)';
+        return;
+      }
+      enText = stripHtml(d.en);
+    }
+    if (!enText){ box.classList.add('hidden'); return; }
+    if (my !== aboutToken) return;
+    txt.textContent = '⏳ กำลังแปลคำอธิบายเป็นภาษาไทย...';
+    const thai = await translateToThai(enText);
+    if (my !== aboutToken) return;
+    if (thai){
+      const t = truncateDesc(thai);
+      saveCache(t, 'th');
+      txt.textContent = t;
+      src.textContent = 'CoinGecko • แปลอัตโนมัติเป็นไทย';
+    } else {
+      // แปลไม่สำเร็จ (บริการแปลล่ม/บล็อก) → แสดงอังกฤษไปก่อน และจะลองแปลใหม่ในครั้งถัดไปที่เปิด
+      const t = truncateDesc(enText);
+      saveCache(t, 'en');
+      txt.textContent = t;
+      src.textContent = 'CoinGecko (อังกฤษ — จะลองแปลใหม่ในครั้งถัดไป)';
+    }
   } catch(e){
     if (my !== aboutToken) return;
     box.classList.add('hidden');   // โหลดไม่ได้ (เช่น CoinGecko ล่ม) → ซ่อนเงียบ ๆ ไม่กระทบส่วนอื่น
